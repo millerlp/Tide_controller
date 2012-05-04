@@ -2,7 +2,16 @@
 # 
 # Author: Luke Miller  May 2, 2012
 ###############################################################################
+# These functions are based on code originally written by R. Pawlowicz as part 
+# of the T_TIDE harmonic analysis toolbox for MATLAB. The original MATLAB code 
+# is available from 
+# http://www.eos.ubc.ca/~rich/#T_Tide 
+# in the archive t_tide_v1.3beta.zip
 
+# The T_TIDE toolbox is described in: 
+# R. Pawlowicz, B. Beardsley, and S. Lentz, "Classical tidal harmonic analysis 
+# including error estimates in MATLAB using T_TIDE", Computers and Geosciences 
+# 28 (2002), 929-937.
 
 ################################################################################
 # read_harmonicsfile is a function to parse a tidal harmonics file taken from 
