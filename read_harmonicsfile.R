@@ -6,8 +6,7 @@
 # of the T_TIDE harmonic analysis toolbox for MATLAB. The original MATLAB code 
 # is available from 
 # http://www.eos.ubc.ca/~rich/#T_Tide 
-# in the archive t_tide_v1.3beta.zip
-
+# in t_tide_v1.3beta.zip
 # The T_TIDE toolbox is described in: 
 # R. Pawlowicz, B. Beardsley, and S. Lentz, "Classical tidal harmonic analysis 
 # including error estimates in MATLAB using T_TIDE", Computers and Geosciences 
@@ -15,7 +14,9 @@
 
 ################################################################################
 # read_harmonicsfile is a function to parse a tidal harmonics file taken from 
-# the XTide program. The harmonic file must be a text format, not the binary 
+# the XTide program. 
+
+# The harmonic file must be a text format, not the binary 
 # tcd format that is generally distributed with XTide. To generate this text 
 # version of the harmonics.tcd file, you must use the command line tool 
 # restore_tide_db found in the tcd-utils package distributed on the XTide site.
@@ -167,8 +168,9 @@ read_harmonicsfile = function(fid) {
 		xharm$tzfile[nh] = temp[[1]][3]
 		
 		line = noncom(fid)
-		# Get datum, which is either a current speed or a reference tidal height 
-		# usually mean lower low water in the continental US. 
+		# Get datum, which is either a current speed or a tidal height
+		# For NOAA tide stations, this datum is the difference between the 
+		# mean sea level and mean lower low water 
 		temp = strsplit(line,' +')
 		xharm$datum[nh] = as.numeric(temp[[1]][1])
 		
@@ -218,7 +220,6 @@ read_harmonicsfile = function(fid) {
 	return(xtide)
 } # end of read_harmonicsfile function
 
-
 #########################################################
 # noncom is a function to skip over comment lines in the harmonics text file.
 # It needs to be supplied with a file connection (fid) passed from the calling 
@@ -240,3 +241,5 @@ noncom = function(fid) {
 	# Return the current line of text
 	line
 }
+
+
