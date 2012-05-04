@@ -5,14 +5,22 @@
 # Author: Luke Miller  May 3, 2012
 ###############################################################################
 
-# Load the previously-generated harmonics file that contains data for all 666 
-# sites around North America. 
+# Load the previously-generated harmonics file that contains data for all 637
+# reference sites in North America. These are only for tide reference stations 
+# maintained by NOAA. NOAA generates predictions for a few thousand other 
+# 'subordinate' stations that are not included in this data set. The subordinate
+# station predictions are generally made by applying a height offset 
+# correction and high/low tide time correction to the predictions from the local
+# reference station. If you wish to make predictions for one of these 
+# subordinate stations you'll still need to first generate predictions for the 
+# local reference station (contained in this data set) and apply your 
+# corrections afterwards.
 load('Harmonics_20120302.Rdata')
 
 # Specify a search string that will hopefully only return a single station
 stationID = 'San Diego, San Diego Bay'
 #stationID = 'Monterey Harbor'
-
+#stationID = 'San Francisco'
 # Find row index of the desired station in the harms list
 stInd = grep(stationID, harms$station)
 
@@ -24,7 +32,9 @@ curr.year = curr.date$year + 1900
 year.ind = curr.year - harms$startyear + 1
 
 # Specify number of years' worth of starting constants to keep
-keep.years = 10
+# More than 4 year's worth of constants starts to fill up the Arduino SRAM, and
+# will not allow the program to run correctly.
+keep.years = 4
 
 # Extract the useful bits from the harms list, keeping only data for the 
 # desired tide station.
@@ -33,7 +43,9 @@ keep.years = 10
 # file, and all of the names match up except LDA2 (called LAM2 by NOAA). So we
 # can just keep the first 37 constants instead of all 175 from the XTide file.
 # These will give predictions that are well within the variance in tide height
-# caused by local day-to-day weather conditions 
+# caused by local day-to-day weather conditions. Note that the order of the 
+# named constituents differs between the XTide harmonics file and the NOAA 
+# web pages.
 harms1 = list(name = harms$name[1:37], 
 		speed = harms$speed[1:37],
 		startyear = seq(curr.year, (curr.year+keep.years-1)),
@@ -54,13 +66,19 @@ attr(harms1$equilarg, 'dimnames')[[2]] = harms1$startyear
 attr(harms1$nodefactor, 'dimnames')[[1]] = harms1$name
 attr(harms1$nodefactor, 'dimnames')[[2]] = harms1$startyear
 
+# Begin sending output to a text file for copying/pasting into the 
+# Arduino sketch.
+sink(file = 'Tides_Arduino_preamble.txt', type = 'output', split = TRUE)
 
-
-# The following lines are here to output the harmonic values in a format that 
+# The following lines output the harmonic values in a format that 
 # is easy to copy and paste into Arduino code. Just run the script, and copy the
 # output on the command line to paste it into the Arduino .ino file. 
 
 cat('// Selected station: ', harms1$station,'\n')
+# The 'datum' printed here is the difference between mean sea level and mean 
+# lower low water for the NOAA station. These two values can be found for NOAA 
+# tide reference stations on the tidesandcurrents.noaa.gov site under the datum
+# page for each station. 
 cat('const float Datum =', harms1$datum, '; // units in feet\n')
 cat('// Harmonic constant names: ')
 cat(harms1$name, sep = ', ')
@@ -77,14 +95,47 @@ cat('const float Speed[] = {')
 cat(harms1$speed, sep = ',')
 cat('};\n')
 
-for (i in 1:ncol(harms1$equilarg)) {
-	cat('const float Equilarg',harms1$startyear[i],'[] = {', sep = '')
-	cat(harms1$equilarg[, i], sep = ',')
-	cat('};\n')
-}
+### Code to output each year's starting values as separate arrays
+#for (i in 1:ncol(harms1$equilarg)) {
+#	cat('const float Equilarg',harms1$startyear[i],'[] = {', sep = '')
+#	cat(harms1$equilarg[, i], sep = ',')
+#	cat('};\n')
+#}
+#
+#for (i in 1:ncol(harms1$nodefactor)) {
+#	cat('const float Nodefactor',harms1$startyear[i],'[] = {', sep = '')
+#	cat(harms1$nodefactor[,i], sep = ',')
+#	cat('};\n')
+#}
 
-for (i in 1:ncol(harms1$nodefactor)) {
-	cat('const float Nodefactor',harms1$startyear[i],'[] = {', sep = '')
-	cat(harms1$nodefactor[,i], sep = ',')
-	cat('};\n')
+## Create code for a 4 year x 37 constituent array
+cat('const float Equilarg[4][37] = { \n')
+for (i in 1:(ncol(harms1$equilarg)-1)) {
+	cat('{')
+	cat(harms1$equilarg[, i], sep = ',')
+	cat('},\n')
 }
+cat('{')
+cat(harms1$equilarg[ ,ncol(harms1$equilarg)], sep = ',')
+cat('} \n };\n')
+cat('\n')
+
+cat('const float Nodefactor[4][37] = { \n')
+for (i in 1:(ncol(harms1$nodefactor)-1)) {
+	cat('{')
+	cat(harms1$nodefactor[, i], sep = ',')
+	cat('},\n')
+}
+cat('{')
+cat(harms1$nodefactor[ ,ncol(harms1$nodefactor)], sep = ',')
+cat('} \n };\n')
+cat('\n')
+
+cat('// The currYear array will be used as a reference for which row of the\n')
+cat('// Equilarg and Nodefactor arrays we should be pulling values from.\n')
+cat('const int currYear[] = {')
+cat(harms1$startyear, sep = ',')
+cat('};\n')
+
+# Close the output text file
+sink()
