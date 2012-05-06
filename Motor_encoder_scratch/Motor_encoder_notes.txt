@@ -1,0 +1,75 @@
+Arduino ports:
+
+B: digital pin 8 to 13, covered by PCINT0
+C: analog input pins, 	covered by PCINT1
+D: digital pins 0 to 7, covered by PCINT2
+
+SoftwareSerial and PololuWheelEncoders clash with each other in their 
+stock forms because they both try to set up pin change interrupts on 
+all three ports of the Arduino. To make these two libraries play nice
+together, you need to modify both to use separate ports. For both 
+libraries, I made a copy of the original library folder, renamed it,
+and placed the new folder in Arduino/libraries/
+Inside each folder, I changed the name of the .cpp and .h files to add
+the 'my' to the start of each to differentiate them from the original
+libraries. 
+
+There are no changes made to the code inside mySoftwareSerial.h.
+ 
+Inside mySoftwareSerial.cpp, two sets of changes need to be made.
+Near the top of the .cpp file (line 44), change the line
+#include "SoftwareSerial.h" 
+
+to read
+#include "mySoftwareSerial.h"
+
+Further down in the .cpp file, make the 2nd set of changes. Comment 
+out the lines:
+
+/*
+#if defined(PCINT1_vect)
+ISR(PCINT1_vect)
+{
+  SoftwareSerial::handle_interrupt();
+}
+#endif
+
+#if defined(PCINT2_vect)
+ISR(PCINT2_vect)
+{
+  SoftwareSerial::handle_interrupt();
+}
+#endif
+
+#if defined(PCINT3_vect)
+ISR(PCINT3_vect)
+{
+  SoftwareSerial::handle_interrupt();
+}
+#endif
+*/
+
+so that mySoftwareSerial doesn't interfere with other routines trying to
+use pin change interrupts on ports C and D. mySoftwareSerial retains use 
+of pin change interrupts on port B (digital pins 8-13).
+This leaves ports C and D available for routines like the PololuWheelEncoders.
+See http://baldwisdom.com/we-interrupt-our-regular-programming/
+
+The myPololuWheelEncoders.h file does not need to be modified (except for 
+having its name changed).
+
+In the PololuWheelEncoders.cpp file, near the top (line 29), the line
+#include "PololuWheelEncoders.h"
+
+should be changed to read
+#include "myPololuWheelEncoders.h"
+
+Further down in the code of the file, the line
+ISR(PCINT0_vect) 
+should be changed to read ISR(PNINT2_vect), and the two lines
+
+ISR(PCINT1_vect,ISR_ALIASOF(PCINT0_vect));
+ISR(PCINT2_vect,ISR_ALIASOF(PCINT0_vect));
+
+below that should be commented out. This will make it so that the encoder
+functions only work on digital lines 0-7 (Arduino PortB).

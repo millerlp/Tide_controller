@@ -1,0 +1,46 @@
+Arduino ports:
+
+B: digital pin 8 to 13, covered by PCINT0
+C: analog input pins, 	covered by PCINT1
+D: digital pins 0 to 7, covered by PCINT2
+
+Modified mySoftwareSerial.cpp to comment out lines:
+
+/*
+#if defined(PCINT1_vect)
+ISR(PCINT1_vect)
+{
+  SoftwareSerial::handle_interrupt();
+}
+#endif
+
+#if defined(PCINT2_vect)
+ISR(PCINT2_vect)
+{
+  SoftwareSerial::handle_interrupt();
+}
+#endif
+
+#if defined(PCINT3_vect)
+ISR(PCINT3_vect)
+{
+  SoftwareSerial::handle_interrupt();
+}
+#endif
+*/
+
+so that mySoftwareSerial doesn't interfere with other routines trying to
+use pin change interrupts on ports C and D. mySoftwareSerial retains use 
+of pin change interrupts on port B (digital pins 8-13).
+This leaves ports C and D available for routines like the PololuWheelEncoders.
+See http://baldwisdom.com/we-interrupt-our-regular-programming/
+
+The code in PololuWheelEncoders.cpp also needs to be modified. The line
+ISR(PCINT0_vect) 
+should be changed to read ISR(PNINT2_vect), and the two lines
+
+ISR(PCINT1_vect,ISR_ALIASOF(PCINT0_vect));
+ISR(PCINT2_vect,ISR_ALIASOF(PCINT0_vect));
+
+below that should be commented out. This will make it so that the encoder
+functions only work on digital lines 0-7 (Arduino PortB).
