@@ -1,4 +1,4 @@
-/* Tide_controller_v1.0 
+/* Tide_controller_v1.1 
   Copyright (C) 2012 Luke Miller
   
       This program is free software: you can redistribute it and/or modify
@@ -32,6 +32,12 @@
 */
 //********************************************************************************
 // Initial setup
+
+#include <mySoftwareSerial.h>
+#include <PololuQik.h>
+#include <myPololuWheelEncoders.h>
+#include <Wire.h>
+#include <RTClib.h>
 
 // Initialize harmonic constant arrays. These each hold 37 values for
 // the tide site that was extracted using the R scripts. If you wish
@@ -67,19 +73,66 @@ const float Nodefactor[4][37] = {
 {0.8278,0.8824,0.7472,0.878,1.5575,1.0377,1.0571,1.0768,1.1173,1.1594,1.0377,1.0377,0.8068,0.4868,1,0.8068,0.8068,1,1,1,1,1,1,1.0377,1.0377,1.0377,0.8068,0.9156,0.9501,1.0768,1.0377,1.0377,0.6271,1.0377,1.1307,1,1} 
  };
 
-// The currYear array will be used as a reference for which row of the
-// Equilarg and Nodefactor arrays we should be pulling values from.
-const int currYear[] = {2012,2013,2014,2015};
+
+/*
+Required connections between Arduino and qik 2s9v1:
+
+      Arduino    qik 2s9v1
+           5V -> VCC
+          GND -> GND
+Digital Pin 8 -> TX pin on 2s9v1 (optional if you don't need talk-back from the unit) 
+Digital Pin 9 -> RX pin on 2s9v1
+Digital Pin 10 -> RESET
+*/
+PololuQik2s9v1 qik(8, 9, 10);
+
+PololuWheelEncoders encoder;
+
+RTC_DS1307 RTC;
+unsigned int YearIndx = 0;    // Used to index rows in the Equilarg/Nodefactor arrays
+const unsigned int startYear = 2012;  // 1st year in the Equilarg/Nodefactor datasets
+float currHours = 0;          // Elapsed hours since start of year
+const int adjustGMT = 8;     // Time zone adjustment to get time in GMT
+
+// Define unixtime values for the start of each year
+//                               2012        2013        2014        2015
+unsigned long startSecs[] = {1325376000, 1356998400, 1388534400, 1420070400};
 
 
-// TODO: establish some interrupts here for the motor revolution counting. 
+long Total = 0;  // Total turns during this actuation
+float TotalTurns = 0; // Total turns overall (i.e. current position)
+int secs = 0; // Keep track of previous seconds value in main loop
 
 
-float hours = 0; // testing, give one value for hours from start of year
+
 //**************************************************************************
 // Welcome to the setup loop
 void setup(void)
 {
+  Wire.begin();
+  RTC.begin();
+  // If the Real Time Clock has begun to drift, you can reset it by pulling its
+  // backup battery, powering down the Arduino, replacing the backup battery
+  // and then compiling/uploading this sketch to the Arduino. It will only reset
+  // the time if the real time clock is halted due to power loss.
+  if (! RTC.isrunning()) {
+    Serial.println("RTC is NOT running!");
+    // following line sets the RTC to the date & time this sketch was compiled
+    RTC.adjust(DateTime(__DATE__, __TIME__));
+  }
+  
+  // Initialize qik 2s9v1 serial motor controller
+  // The value in parentheses is the serial comm speed
+  // for the 2s9v1 controller
+  qik.init(38400);
+
+  //  encoder.init(); 255 refers to non-existing pins
+  // Requires two pins per encoder, here on pins 2,3
+  // Take the motor's encoder lines A and B (yellow and white on my motor)
+  // and connect them to pins 2 and 3 on the Arduino.
+  // Additionally, supply the encoder +5V from the Arduino's 5V line
+  encoder.init(2,3,255,255);
+  
   // TODO: Create limit switch routine for initializing tide height value
   //       after a restart. 
   // TODO: Have user select tide height limits outside of which the motor
@@ -88,7 +141,7 @@ void setup(void)
   
   //************************************
   // For debugging
-  Serial.begin(9600);
+  Serial.begin(38400);
   //************************************
 }
 
@@ -101,27 +154,53 @@ void loop(void)
   // TODO: convert real time clock time to hours since start of year
   // TODO: calculate current year so that the correct equilibrium start values
   //       are being used
- int Year = 0; 
- float results = Datum; // initialize results variable
- for (int harms = 0; harms < 37; harms++) {
-  // Calculate each component of the overall tide equation 
-  // The 'hours' value is assumed to be in hours from the start of the
-  // year, in the Greenwich Mean Time zone, not your local time zone.
-  // There is no daylight savings time adjustment here.  
-    results = results + (Nodefactor[Year][harms] * Amp[harms] * cos( (Speed[harms] * hours + Equilarg[Year][harms] - Kappa[harms]) * DEG_TO_RAD));
- }
- 
- //********************************
- // For debugging
- Serial.print("Hour: ");
- Serial.print(hours);
- Serial.print(", ");
- Serial.print(results, 3);
- Serial.println(" ft.");
- delay(2000);
-// hours = hours + 0.1; 
- // end of debugging stuff
- //********************************
+  
+  // Get current time, store in object 'now'
+  DateTime now = RTC.now();
+  
+  // If it is the start of a new minute, calculate new tide height and
+  // adjust motor position
+  if (now.second() == 0) {
+    
+    // Calculate difference between current year and starting year.
+    YearIndx = startYear - now.year();
+    // Calculate hours since start of current year
+    currHours = (now.unixtime() - startSecs[YearIndx]) / float(3600);
+    // Shift currHours to Greenwich Mean Time
+    currHours = currHours + adjustGMT;
+    
+    float results = Datum; // initialize results variable
+    for (int harms = 0; harms < 37; harms++) {
+    // Calculate each component of the overall tide equation 
+    // The currHours value is assumed to be in hours from the start of the
+    // year, in the Greenwich Mean Time zone, not your local time zone.
+    // There is no daylight savings time adjustment here.  
+      results = results + (Nodefactor[YearIndx][harms] * Amp[harms] * cos( (Speed[harms] * currHours + Equilarg[YearIndx][harms] - Kappa[harms]) * DEG_TO_RAD));
+   }
+    //********************************
+     // For debugging
+       // Print current time to serial monitor
+    Serial.print(now.year(), DEC);
+    Serial.print('/');
+    Serial.print(now.month(), DEC);
+    Serial.print('/');
+    Serial.print(now.day(), DEC);
+    Serial.print(' ');
+    Serial.print(now.hour(), DEC);
+    Serial.print(':');
+    Serial.print(now.minute(), DEC);
+    Serial.print(':');
+    Serial.println(now.second(), DEC);
+    Serial.print("currHours: ");
+    Serial.print(currHours);
+    Serial.print(", Tide: ");
+    Serial.print(results, 3);
+    Serial.println(" ft.");
+     // end of debugging stuff
+     //********************************   
+   
+  }
+
  
  // TODO: calculate how far motor needs to turn to reach new 
  //       tide height.
