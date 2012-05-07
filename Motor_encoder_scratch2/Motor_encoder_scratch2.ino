@@ -42,15 +42,32 @@ long Total = 0;  // Total turns during this actuation
 float TotalTurns = 0; // Total turns overall (i.e. current position)
 int secs = 0; // Keep track of previous seconds value in main loop
 
+int YearIndx = 0;             // Used to index rows in the Equilarg/Nodefactor arrays
+const long startYear = 2012;  // 1st year in the Equilarg/Nodefactor datasets
+float  currHours = 0;          // Elapsed hours since start of year
+
+// Define unixtime values for the start of each year
+//                               2012        2013        2014        2015
+unsigned long startSecs[] = {1325376000, 1356998400, 1388534400, 1420070400};
 
 void setup() {
   
   Wire.begin();
   RTC.begin();
-  // Reset the real time clock to current computer time
-  RTC.adjust(DateTime(__DATE__, __TIME__));
+  // If the Real Time Clock has begun to drift, you can reset it by pulling its
+  // backup battery, powering down the Arduino, replacing the backup battery
+  // and then compiling/uploading this sketch to the Arduino. It will only reset
+  // the time if the real time clock is halted due to power loss.
+  if (! RTC.isrunning()) {
+    Serial.println("RTC is NOT running!");
+    // following line sets the RTC to the date & time this sketch was compiled
+    RTC.adjust(DateTime(__DATE__, __TIME__));
+  }
 
   // Initialize qik 2s9v1 serial motor controller
+  
+  
+  
   // The value in parentheses is the serial comm speed
   // for the 2s9v1 controller
   qik.init(38400);
@@ -79,6 +96,19 @@ void setup() {
   Serial.print(':');
   Serial.print(now.second(), DEC);
   Serial.println();
+  
+  // Calculate offset from starting year 2012
+  YearIndx = now.year() - startYear;
+  Serial.print("Offset from 2012: ");
+  Serial.println(YearIndx);
+  
+  // Calculate hours since the start of the year
+  currHours = (now.unixtime() - startSecs[YearIndx]) / (float)3600;
+  Serial.print("Hours since start of 2012: ");
+  Serial.println(currHours);
+  
+  
+  
   Serial.print("Test motor encoder...");
   Serial.println();
 }
