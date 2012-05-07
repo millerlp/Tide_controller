@@ -43,9 +43,9 @@ float TotalTurns = 0; // Total turns overall (i.e. current position)
 int secs = 0; // Keep track of previous seconds value in main loop
 
 int YearIndx = 0;             // Used to index rows in the Equilarg/Nodefactor arrays
-const long startYear = 2012;  // 1st year in the Equilarg/Nodefactor datasets
+const int startYear = 2012;  // 1st year in the Equilarg/Nodefactor datasets
 float  currHours = 0;          // Elapsed hours since start of year
-
+const int adjustGMT = -8;    // Time zone adjustment to get time in GMT
 // Define unixtime values for the start of each year
 //                               2012        2013        2014        2015
 unsigned long startSecs[] = {1325376000, 1356998400, 1388534400, 1420070400};
