@@ -1,5 +1,6 @@
+// Luke Miller May 2012
 /* See notes at the bottom of the sketch about the changes that
-need to be made to the SoftwareSerial and PololuWheelEncoders
+need to be made to the SoftwareSerial, PololuQik, and PololuWheelEncoders
 libraries in order to make this sketch work.
 
 The PololuQik library is used to drive the qik 2s9v1 serial 
@@ -18,6 +19,8 @@ for use in this sketch.
 #include <mySoftwareSerial.h>
 #include <PololuQik.h>
 #include <myPololuWheelEncoders.h>
+#include <Wire.h>
+#include <RTClib.h>
 
 /*
 Required connections between Arduino and qik 2s9v1:
@@ -33,15 +36,24 @@ PololuQik2s9v1 qik(8, 9, 10);
 
 PololuWheelEncoders encoder;
 
+RTC_DS1307 RTC;
+
 long Total = 0;  // Total turns during this actuation
 float TotalTurns = 0; // Total turns overall (i.e. current position)
 
 void setup() {
   
+  Wire.begin();
+  RTC.begin();
+  // Reset the real time clock to current computer time
+  RTC.adjust(DateTime(__DATE__, __TIME__));
+
   // Initialize qik 2s9v1 serial motor controller
-  qik.init();
+  // The value in parentheses is the serial comm speed
+  // for the 2s9v1 controller
+  qik.init(38400);
   
-  //  encoderInit(); 255 refers to non-existing pins
+  //  encoder.init(); 255 refers to non-existing pins
   // Requires two pins per encoder, here on pins 2,3
   // Take the motor's encoder lines A and B (yellow and white on my motor)
   // and connect them to pins 2 and 3 on the Arduino.
@@ -50,13 +62,28 @@ void setup() {
 
   Serial.begin(38400);
   delay(1000);
+  // Query real time clock for current time
+  DateTime now = RTC.now();
+  // Print current time to serial monitor
+  Serial.print(now.year(), DEC);
+  Serial.print('/');
+  Serial.print(now.month(), DEC);
+  Serial.print('/');
+  Serial.print(now.day(), DEC);
+  Serial.print(' ');
+  Serial.print(now.hour(), DEC);
+  Serial.print(':');
+  Serial.print(now.minute(), DEC);
+  Serial.print(':');
+  Serial.print(now.second(), DEC);
+  Serial.println();
   Serial.print("Test motor encoder...");
   Serial.println();
 }
 // ************Main Loop*********************************
 void loop() {
   // Turn motor 0 on, forward
-  qik.setM0Speed(20);
+  qik.setM0Speed(40);
   while (Total < 3200) {
     Total = Total + encoder.getCountsAndResetM1();
     if (Total >= 3200) {
@@ -152,8 +179,19 @@ ISR(PCINT2_vect,ISR_ALIASOF(PCINT0_vect));
 below that should be commented out. This will make it so that the encoder
 functions only work on digital lines 0-7 (Arduino PortB).
 
+Finally, one change needs to be made the PololuQik.h file in the PololuQik
+library. In that file, change the line
+#include "../SoftwareSerial/SoftwareSerial.h"
+to read:
+#include "../mySoftwareSerial/mySoftwareSerial.h"
+
+You could rename the PololuQik library files to myPololuQik if you want to,
+but I don't bother.
+
 Once these changes have been made, make sure both of the modified libraries
-are in the Arduino-1.0/libraries folder. Then restart the Arduino program
-so that it finds the newly modified libraries. 
+are in the Arduino-1.0/libraries folder. You must then remove the 
+SoftwareSerial library folder from the libraries/ directory, since its 
+presence seems to interfere with compiling this sketch. Then restart the 
+Arduino program so that it finds the newly modified libraries. 
 */
 
