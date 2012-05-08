@@ -33,9 +33,9 @@
 //********************************************************************************
 // Initial setup
 
-#include <mySoftwareSerial.h>
-#include <PololuQik.h>
-#include <myPololuWheelEncoders.h>
+//#include <mySoftwareSerial.h>
+//#include <PololuQik.h>
+//#include <myPololuWheelEncoders.h>
 #include <Wire.h>
 #include <RTClib.h>
 
@@ -84,9 +84,9 @@ Digital Pin 8 -> TX pin on 2s9v1 (optional if you don't need talk-back from the 
 Digital Pin 9 -> RX pin on 2s9v1
 Digital Pin 10 -> RESET
 */
-PololuQik2s9v1 qik(8, 9, 10);
+//PololuQik2s9v1 qik(8, 9, 10);
 
-PololuWheelEncoders encoder;
+//PololuWheelEncoders encoder;
 
 RTC_DS1307 RTC;
 unsigned int YearIndx = 0;    // Used to index rows in the Equilarg/Nodefactor arrays
@@ -109,29 +109,50 @@ int secs = 0; // Keep track of previous seconds value in main loop
 // Welcome to the setup loop
 void setup(void)
 {
+
+  
   Wire.begin();
   RTC.begin();
   // If the Real Time Clock has begun to drift, you can reset it by pulling its
   // backup battery, powering down the Arduino, replacing the backup battery
   // and then compiling/uploading this sketch to the Arduino. It will only reset
   // the time if the real time clock is halted due to power loss.
-  if (! RTC.isrunning()) {
-    Serial.println("RTC is NOT running!");
-    // following line sets the RTC to the date & time this sketch was compiled
-    RTC.adjust(DateTime(__DATE__, __TIME__));
-  }
+//  if (! RTC.isrunning()) {
+//    Serial.println("RTC is NOT running!");
+//    // following line sets the RTC to the date & time this sketch was compiled
+//    RTC.adjust(DateTime(__DATE__, __TIME__));
+//  }
+    // The clock reset function may be better left to a stand-alone sketch.
+
+    //************************************
+  // For debugging
+  Serial.begin(9600);
+  //************************************
+  DateTime now = RTC.now();
+  Serial.print(now.year(), DEC);
+  Serial.print('/');
+  Serial.print(now.month(), DEC);
+  Serial.print('/');
+  Serial.print(now.day(), DEC);
+  Serial.print(' ');
+  Serial.print(now.hour(), DEC);
+  Serial.print(':');
+  Serial.print(now.minute(), DEC);
+  Serial.print(':');
+  Serial.println(now.second(), DEC);
+  delay(2000);
   
   // Initialize qik 2s9v1 serial motor controller
   // The value in parentheses is the serial comm speed
   // for the 2s9v1 controller
-  qik.init(38400);
+//  qik.init(38400);
 
   //  encoder.init(); 255 refers to non-existing pins
   // Requires two pins per encoder, here on pins 2,3
   // Take the motor's encoder lines A and B (yellow and white on my motor)
   // and connect them to pins 2 and 3 on the Arduino.
   // Additionally, supply the encoder +5V from the Arduino's 5V line
-  encoder.init(2,3,255,255);
+//  encoder.init(2,3,255,255);
   
   // TODO: Create limit switch routine for initializing tide height value
   //       after a restart. 
@@ -139,21 +160,13 @@ void setup(void)
   //       won't turn any further.
 
   
-  //************************************
-  // For debugging
-  Serial.begin(38400);
-  //************************************
+
 }
 
 //**************************************************************************
 // Welcome to the Main loop
 void loop(void)
 {
-  // TODO: get real time clock working for date/time info
-  // TODO: decide whether a minute has elapsed, if so calculate new tide ht.
-  // TODO: convert real time clock time to hours since start of year
-  // TODO: calculate current year so that the correct equilibrium start values
-  //       are being used
   
   // Get current time, store in object 'now'
   DateTime now = RTC.now();
@@ -169,14 +182,16 @@ void loop(void)
     // Shift currHours to Greenwich Mean Time
     currHours = currHours + adjustGMT;
     
+    // *****************Calculate current tide height*************
     float results = Datum; // initialize results variable
-    for (int harms = 0; harms < 37; harms++) {
-    // Calculate each component of the overall tide equation 
-    // The currHours value is assumed to be in hours from the start of the
-    // year, in the Greenwich Mean Time zone, not your local time zone.
-    // There is no daylight savings time adjustment here.  
-      results = results + (Nodefactor[YearIndx][harms] * Amp[harms] * cos( (Speed[harms] * currHours + Equilarg[YearIndx][harms] - Kappa[harms]) * DEG_TO_RAD));
-   }
+//    for (int harms = 0; harms < 37; harms++) {
+//    // Calculate each component of the overall tide equation 
+//    // The currHours value is assumed to be in hours from the start of the
+//    // year, in the Greenwich Mean Time zone, not your local time zone.
+//    // There is no daylight savings time adjustment here.  
+//      results = results + (Nodefactor[YearIndx][harms] * Amp[harms] * cos( (Speed[harms] * currHours + Equilarg[YearIndx][harms] - Kappa[harms]) * DEG_TO_RAD));
+//   }
+     //******************End of Tide Height calculation*************
     //********************************
      // For debugging
        // Print current time to serial monitor
@@ -198,7 +213,7 @@ void loop(void)
     Serial.println(" ft.");
      // end of debugging stuff
      //********************************   
-   
+   delay(300);
   }
 
  
