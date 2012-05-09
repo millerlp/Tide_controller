@@ -41,7 +41,7 @@
 #include <myPololuWheelEncoders.h>
 #include <Wire.h>
 #include <RTClib.h>
-
+//----------------------------------------------------------------------------------
 // Initialize harmonic constant arrays. These each hold 37 values for
 // the tide site that was extracted using the R scripts. If you wish
 // to make predictions for a different site, it will be necessary to
@@ -92,7 +92,21 @@ float currSpeed;
 float currNodefactor;
 float currEquilarg;
 float currKappa;
+//------------------------------------------------------------------------------------------------
+// Real Time Clock setup
+RTC_DS1307 RTC;
+unsigned int YearIndx = 0;    // Used to index rows in the Equilarg/Nodefactor arrays
+const unsigned int startYear = 2012;  // 1st year in the Equilarg/Nodefactor datasets
+float currHours = 0;          // Elapsed hours since start of year
+const int adjustGMT = 8;     // Time zone adjustment to get time in GMT
 
+// Define unixtime values for the start of each year
+//                               2012        2013        2014        2015
+unsigned long startSecs[] = {1325376000, 1356998400, 1388534400, 1420070400};
+
+int secs = 0; // Keep track of previous seconds value in main loop
+//------------------------------------------------------------------------------------------------
+// Motor controller setup section
 /*
 Required connections between Arduino and qik 2s9v1:
 
@@ -107,43 +121,19 @@ PololuQik2s9v1 qik(8, 9, 10);
 
 PololuWheelEncoders encoder;
 
-RTC_DS1307 RTC;
-unsigned int YearIndx = 0;    // Used to index rows in the Equilarg/Nodefactor arrays
-const unsigned int startYear = 2012;  // 1st year in the Equilarg/Nodefactor datasets
-float currHours = 0;          // Elapsed hours since start of year
-const int adjustGMT = 8;     // Time zone adjustment to get time in GMT
-
-// Define unixtime values for the start of each year
-//                               2012        2013        2014        2015
-unsigned long startSecs[] = {1325376000, 1356998400, 1388534400, 1420070400};
-
-
 long Total = 0;  // Total turns during this actuation
 float TotalTurns = 0; // Total turns overall (i.e. current position)
-int secs = 0; // Keep track of previous seconds value in main loop
-
+//---------------------------------------------------------------------------
 
 
 //**************************************************************************
 // Welcome to the setup loop
 void setup(void)
-{
-
-  
+{  
   Wire.begin();
   RTC.begin();
-  // If the Real Time Clock has begun to drift, you can reset it by pulling its
-  // backup battery, powering down the Arduino, replacing the backup battery
-  // and then compiling/uploading this sketch to the Arduino. It will only reset
-  // the time if the real time clock is halted due to power loss.
-//  if (! RTC.isrunning()) {
-//    Serial.println("RTC is NOT running!");
-//    // following line sets the RTC to the date & time this sketch was compiled
-//    RTC.adjust(DateTime(__DATE__, __TIME__));
-//  }
-    // The clock reset function may be better left to a stand-alone sketch.
 
-    //************************************
+  //************************************
   // For debugging
   Serial.begin(9600);
   //************************************
@@ -177,8 +167,6 @@ void setup(void)
   //       after a restart. 
   // TODO: Have user select tide height limits outside of which the motor
   //       won't turn any further.
-
-  
 
 }
 
