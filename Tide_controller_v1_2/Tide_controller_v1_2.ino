@@ -85,37 +85,13 @@ const unsigned int Nodefactor[4][37] = {
 // The currYear array will be used as a reference for which row of the
 // Equilarg and Nodefactor arrays we should be pulling values from.
 const int currYear[] = {2012,2013,2014,2015};
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             // Selected station:  San Diego, San Diego Bay, California 
-const float Datum = 2.9396 ; // units in feet
-// Harmonic constant names: J1, K1, K2, L2, M1, M2, M3, M4, M6, M8, N2, 2N2, O1, OO1, P1, Q1, 2Q1, R2, S1, S2, S4, S6, T2, LDA2, MU2, NU2, RHO1, MK3, 2MK3, MN4, MS4, 2SM2, MF, MSF, MM, SA, SSA
-// These names match the NOAA names, except LDA2 here is LAM2 on NOAA's site
-// Amp scaled by 1000, divide by 1000 to convert to original float value
-const unsigned int Amp[] = {66,1137,221,49,43,1824,11,0,14,0,426,53,723,36,357,135,14,6,13,751,0,0,47,10,51,83,28,0,0,0,0,0,0,0,0,227,0};
-// Kappa scaled by 10, , so divide by 10 to convert to original float value
-const unsigned int Kappa[] = {2206,2080,1343,1440,2204,1432,3461,0,614,0,1238,975,1924,2411,2055,1847,1821,1401,3388,1402,0,0,1273,1288,930,1288,1843,0,0,0,0,0,0,0,0,1793,0};
-// Speed is unscaled, stored as the original float values
-const float Speed[] = {15.58544,15.04107,30.08214,29.52848,14.49669,28.9841,43.47616,57.96821,86.95231,115.9364,28.43973,27.89535,13.94304,16.1391,14.95893,13.39866,12.85429,30.04107,15,30,60,90,29.95893,29.45563,27.96821,28.51258,13.47151,44.02517,42.92714,57.42383,58.9841,31.0159,1.098033,1.015896,0.5443747,0.0410686,0.0821373};
-// Equilarg scaled by 100. Divide by 100 to get original value.
-const unsigned int Equilarg[4][37] = { 
-{17495,1851,21655,15782,23131,19425,29137,2850,22275,5700,4193,24962,17162,5364,34993,1930,22699,17692,18000,0,0,0,308,2959,2660,17891,15628,21276,999,23618,19425,16575,3101,16575,15232,28007,20013},
-{27537,1770,21457,34814,15957,27019,22529,18038,9058,77,1609,12198,24892,33361,34919,35482,10072,17765,18000,0,0,0,235,28737,17891,7302,5175,28789,16269,28627,27019,8981,31235,8981,25410,28081,20162},
-{2,1486,20897,18274,7278,1035,19553,2071,3106,4142,2753,4470,35316,22123,34943,1033,2751,17739,18000,0,0,0,261,19806,1982,265,34546,2521,585,3788,1035,34965,20404,34965,34283,28057,20115},
-{8338,1130,20240,366,32299,11042,16563,22084,33126,8168,3886,32732,9858,10509,34967,2703,31549,17714,18000,0,0,0,286,10865,22064,29219,28036,12172,20954,14929,11042,24958,9325,24958,7155,28033,20067} 
- };
 
-// Nodefactor scaled by 10000. Divide by 10000 to get original float value.
-const unsigned int Nodefactor[4][37] = { 
-{9491,9602,8878,11647,11232,10169,10257,10343,10519,10698,10169,10169,9349,7887,10000,9349,9349,10000,10000,10000,10000,10000,10000,10169,10169,10169,9349,9765,9931,10343,10169,10169,8592,10169,10577,10000,10000},
-{8928,9234,8156,12048,8780,10271,10411,10552,10839,11134,10271,10271,8748,6334,10000,8748,8748,10000,10000,10000,10000,10000,10000,10271,10271,10271,8748,9485,9743,10552,10271,10271,7448,10271,10936,10000,10000},
-{8492,8957,7680,10216,13201,10344,10520,10699,11067,11448,10344,10344,8290,5315,10000,8290,8290,10000,10000,10000,10000,10000,10000,10344,10344,10344,8290,9265,9583,10699,10344,10344,6642,10344,11190,10000,10000},
-{8278,8824,7472,8780,15575,10377,10571,10768,11173,11594,10377,10377,8068,4868,10000,8068,8068,10000,10000,10000,10000,10000,10000,10377,10377,10377,8068,9156,9501,10768,10377,10377,6271,10377,11307,10000,10000} 
- };
-
-// The currYear array will be used as a reference for which row of the
-// Equilarg and Nodefactor arrays we should be pulling values from.
-const int currYear[] = {2012,2013,2014,2015};
-
-
+// Define some variables that will hold float-converted versions of the constants above
+float currAmp;
+float currSpeed;
+float currNodefactor;
+float currEquilarg;
+float currKappa;
 
 /*
 Required connections between Arduino and qik 2s9v1:
@@ -227,13 +203,22 @@ void loop(void)
     
     // *****************Calculate current tide height*************
     float results = Datum; // initialize results variable
-//    for (int harms = 0; harms < 37; harms++) {
-//    // Calculate each component of the overall tide equation 
-//    // The currHours value is assumed to be in hours from the start of the
-//    // year, in the Greenwich Mean Time zone, not your local time zone.
-//    // There is no daylight savings time adjustment here.  
+    for (int harms = 0; harms < 37; harms++) {
+      // Many of the constants are stored as unsigned integers to save space. These
+      // steps convert them back to their real values.
+      currNodefactor = Nodefactor[YearIndx][harms] / float(10000);
+      currAmp = Amp[harms] / float(1000);
+      currEquilarg = Equilarg[YearIndx][harms] / float(100);
+      currKappa = Kappa[harms] / float(10);
+      currSpeed = Speed[harms]; // Speed was not scaled to integer
+      
+    // Calculate each component of the overall tide equation 
+    // The currHours value is assumed to be in hours from the start of the
+    // year, in the Greenwich Mean Time zone, not your local time zone.
+    // There is no daylight savings time adjustment here.  
+      results = results + (currNodefactor * currAmp * cos( (currSpeed * currHours + currEquilarg - currKappa) * DEG_TO_RAD));
 //      results = results + (Nodefactor[YearIndx][harms] * Amp[harms] * cos( (Speed[harms] * currHours + Equilarg[YearIndx][harms] - Kappa[harms]) * DEG_TO_RAD));
-//   }
+   }
      //******************End of Tide Height calculation*************
     //********************************
      // For debugging
