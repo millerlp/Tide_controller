@@ -89,6 +89,9 @@ const int currYear[] = {2012,2013,2014,2015};
 //                               2012        2013        2014        2015
 unsigned long startSecs[] = {1325376000, 1356998400, 1388534400, 1420070400};
 
+// 1st year in the Equilarg/Nodefactor arrays
+const unsigned int startYear = 2012;
+
 // Define some variables that will hold float-converted versions of the constants above
 float currAmp;
 float currSpeed;
@@ -99,7 +102,6 @@ float currKappa;
 // Real Time Clock setup
 RTC_DS1307 RTC;
 unsigned int YearIndx = 0;    // Used to index rows in the Equilarg/Nodefactor arrays
-const unsigned int startYear = 2012;  // 1st year in the Equilarg/Nodefactor datasets
 float currHours = 0;          // Elapsed hours since start of year
 const int adjustGMT = 8;     // Time zone adjustment to get time in GMT. Make sure this is
                              // correct for the local standard time of the tide station. 
