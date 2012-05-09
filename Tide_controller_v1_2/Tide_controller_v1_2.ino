@@ -1,5 +1,4 @@
 /* Tide_controller_v1.2 
-// Integer version
 
   Copyright (C) 2012 Luke Miller
   
