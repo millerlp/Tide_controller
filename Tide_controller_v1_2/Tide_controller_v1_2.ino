@@ -37,9 +37,9 @@
 
 // Initial setup
 
-//#include <mySoftwareSerial.h>
-//#include <PololuQik.h>
-//#include <myPololuWheelEncoders.h>
+#include <mySoftwareSerial.h>
+#include <PololuQik.h>
+#include <myPololuWheelEncoders.h>
 #include <Wire.h>
 #include <RTClib.h>
 
@@ -104,9 +104,9 @@ Digital Pin 8 -> TX pin on 2s9v1 (optional if you don't need talk-back from the 
 Digital Pin 9 -> RX pin on 2s9v1
 Digital Pin 10 -> RESET
 */
-//PololuQik2s9v1 qik(8, 9, 10);
+PololuQik2s9v1 qik(8, 9, 10);
 
-//PololuWheelEncoders encoder;
+PololuWheelEncoders encoder;
 
 RTC_DS1307 RTC;
 unsigned int YearIndx = 0;    // Used to index rows in the Equilarg/Nodefactor arrays
@@ -165,14 +165,14 @@ void setup(void)
   // Initialize qik 2s9v1 serial motor controller
   // The value in parentheses is the serial comm speed
   // for the 2s9v1 controller
-//  qik.init(38400);
+  qik.init(38400);
 
   //  encoder.init(); 255 refers to non-existing pins
   // Requires two pins per encoder, here on pins 2,3
   // Take the motor's encoder lines A and B (yellow and white on my motor)
   // and connect them to pins 2 and 3 on the Arduino.
   // Additionally, supply the encoder +5V from the Arduino's 5V line
-//  encoder.init(2,3,255,255);
+  encoder.init(2,3,255,255);
   
   // TODO: Create limit switch routine for initializing tide height value
   //       after a restart. 
