@@ -56,14 +56,14 @@
 // site. 
 // All tide predictions are output in Greenwich Mean Time. 
 
-// Selected station:  San Diego, San Diego Bay, California 
-const float Datum = 2.9396 ; // units in feet
+// Selected station:  Monterey, Monterey Harbor, California 
+const float Datum = 2.8281 ; // units in feet
 // Harmonic constant names: J1, K1, K2, L2, M1, M2, M3, M4, M6, M8, N2, 2N2, O1, OO1, P1, Q1, 2Q1, R2, S1, S2, S4, S6, T2, LDA2, MU2, NU2, RHO1, MK3, 2MK3, MN4, MS4, 2SM2, MF, MSF, MM, SA, SSA
 // These names match the NOAA names, except LDA2 here is LAM2 on NOAA's site
 // Amp scaled by 1000, divide by 1000 to convert to original float value
-const unsigned int Amp[] = {66,1137,221,49,43,1824,11,0,14,0,426,53,723,36,357,135,14,6,13,751,0,0,47,10,51,83,28,0,0,0,0,0,0,0,0,227,0};
+const unsigned int Amp[] = {71,1199,121,23,38,1616,0,0,0,0,368,44,753,36,374,134,16,3,33,428,0,0,22,11,41,72,26,0,0,0,0,0,0,0,0,157,90};
 // Kappa scaled by 10, , so divide by 10 to convert to original float value
-const unsigned int Kappa[] = {2206,2080,1343,1440,2204,1432,3461,0,614,0,1238,975,1924,2411,2055,1847,1821,1401,3388,1402,0,0,1273,1288,930,1288,1843,0,0,0,0,0,0,0,0,1793,0};
+const unsigned int Kappa[] = {2334,2198,1720,2202,2259,1811,0,0,0,0,1546,1239,2034,2502,2156,1951,1994,1802,3191,1802,0,0,1678,1807,1146,1611,1966,0,0,0,0,0,0,0,0,2060,2839};
 // Speed is unscaled, stored as the original float values
 const float Speed[] = {15.58544,15.04107,30.08214,29.52848,14.49669,28.9841,43.47616,57.96821,86.95231,115.9364,28.43973,27.89535,13.94304,16.1391,14.95893,13.39866,12.85429,30.04107,15,30,60,90,29.95893,29.45563,27.96821,28.51258,13.47151,44.02517,42.92714,57.42383,58.9841,31.0159,1.098033,1.015896,0.5443747,0.0410686,0.0821373};
 // Equilarg scaled by 100. Divide by 100 to get original value.
@@ -85,6 +85,7 @@ const unsigned int Nodefactor[4][37] = {
 // The currYear array will be used as a reference for which row of the
 // Equilarg and Nodefactor arrays we should be pulling values from.
 const int currYear[] = {2012,2013,2014,2015};
+
 
 // Define some variables that will hold float-converted versions of the constants above
 float currAmp;
