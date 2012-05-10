@@ -56,6 +56,10 @@
 // All tide predictions are output in Greenwich Mean Time. 
 
 // Selected station:  Monterey, Monterey Harbor, California 
+// The 'datum' printed here is the difference between mean sea level and 
+// mean lower low water for the NOAA station. These two values can be 
+// found for NOAA tide reference stations on the tidesandcurrents.noaa.gov
+//  site under the datum page for each station.
 const float Datum = 2.8281 ; // units in feet
 // Harmonic constant names: J1, K1, K2, L2, M1, M2, M3, M4, M6, M8, N2, 2N2, O1, OO1, P1, Q1, 2Q1, R2, S1, S2, S4, S6, T2, LDA2, MU2, NU2, RHO1, MK3, 2MK3, MN4, MS4, 2SM2, MF, MSF, MM, SA, SSA
 // These names match the NOAA names, except LDA2 here is LAM2 on NOAA's site
@@ -126,6 +130,16 @@ PololuWheelEncoders encoder;
 
 long Total = 0;  // Total turns during this actuation
 float TotalTurns = 0; // Total turns overall (i.e. current position)
+float currPos = 3.0; // Current position, based on limit switch height. Units = ft.
+const float countConv = 0.00008177; // Conversion factor, feet per encoder count
+                                    // Divide desired travel (in ft.) by this value
+                                    // to calculate the number of encoder counts that
+                                    // must occur. 
+float heightDiff;    // Float variable to hold height difference                                    
+unsigned long countVal = 0;     // Store the number of encoder counts needed
+                                // to achieve the new height
+unsigned long counts = 0;       // Store the number of encoder counts that have
+                                // gone by so far.
 //---------------------------------------------------------------------------
 
 
@@ -177,40 +191,80 @@ void setup(void)
 // Welcome to the Main loop
 void loop(void)
 {
-  
+  // Set movement flag to false, no move has occurred (Is this in right place?)
+  // TODO: need to keep track of minute value and only reset moveFlag when minute
+  //       rolls over.
+  boolean moveFlag = false;
   // Get current time, store in object 'now'
   DateTime now = RTC.now();
   
   // If it is the start of a new minute, calculate new tide height and
   // adjust motor position
   if (now.second() == 0) {
-    
-    // Calculate difference between current year and starting year.
-    YearIndx = startYear - now.year();
-    // Calculate hours since start of current year
-    currHours = (now.unixtime() - startSecs[YearIndx]) / float(3600);
-    // Shift currHours to Greenwich Mean Time
-    currHours = currHours + adjustGMT;
-    
-    // *****************Calculate current tide height*************
-    float results = Datum; // initialize results variable
-    for (int harms = 0; harms < 37; harms++) {
-      // Many of the constants are stored as unsigned integers to save space. These
-      // steps convert them back to their real values.
-      currNodefactor = Nodefactor[YearIndx][harms] / float(10000);
-      currAmp = Amp[harms] / float(1000);
-      currEquilarg = Equilarg[YearIndx][harms] / float(100);
-      currKappa = Kappa[harms] / float(10);
-      currSpeed = Speed[harms]; // Speed was not scaled to integer
+    if (!moveFlag) {
+      // Calculate difference between current year and starting year.
+      YearIndx = startYear - now.year();
+      // Calculate hours since start of current year. Hours = seconds / 3600
+      currHours = (now.unixtime() - startSecs[YearIndx]) / float(3600);
+      // Shift currHours to Greenwich Mean Time
+      currHours = currHours + adjustGMT;
       
-    // Calculate each component of the overall tide equation 
-    // The currHours value is assumed to be in hours from the start of the
-    // year, in the Greenwich Mean Time zone, not your local time zone.
-    // There is no daylight savings time adjustment here.  
-      results = results + (currNodefactor * currAmp * cos( (currSpeed * currHours + currEquilarg - currKappa) * DEG_TO_RAD));
-//      results = results + (Nodefactor[YearIndx][harms] * Amp[harms] * cos( (Speed[harms] * currHours + Equilarg[YearIndx][harms] - Kappa[harms]) * DEG_TO_RAD));
-   }
-     //******************End of Tide Height calculation*************
+      // *****************Calculate current tide height*************
+      float results = Datum; // initialize results variable, units of feet.
+      for (int harms = 0; harms < 37; harms++) {
+        // Many of the constants are stored as unsigned integers to save space. These
+        // steps convert them back to their real values.
+        currNodefactor = Nodefactor[YearIndx][harms] / float(10000);
+        currAmp = Amp[harms] / float(1000);
+        currEquilarg = Equilarg[YearIndx][harms] / float(100);
+        currKappa = Kappa[harms] / float(10);
+        currSpeed = Speed[harms]; // Speed was not scaled to integer
+        
+      // Calculate each component of the overall tide equation 
+      // The currHours value is assumed to be in hours from the start of the
+      // year, in the Greenwich Mean Time zone, not the local time zone.
+      // There is no daylight savings time adjustment here.  
+        results = results + (currNodefactor * currAmp * cos( (currSpeed * currHours + currEquilarg - currKappa) * DEG_TO_RAD));
+      }
+       //******************End of Tide Height calculation*************
+       
+       // Calculate height difference between currPos (drain height) and
+       // new tide height. Value may be positive or negative depending on
+       // direction of the tide. 
+       heightDiff = currPos - results; // Units of feet.
+       // Convert heightDiff into number of encoder counts that must pass
+       // to achivee the new height. Absolute value is used here since we 
+       // don't care about direction in this step. The result is cast as 
+       // an unsigned long integer.
+       countVal = (unsigned long)(abs(heightDiff) / countConv);
+       
+       if (heightDiff > 0) // Positive value means drain is higher than target value
+       {
+         counts = 0;
+         qik.setM0Speed(40);  // turn motor on in forward direction
+         while (counts < countVal) {
+           counts = counts + encoder.getCountsAndResetM1();
+           if (counts >= countVal) {
+             qik.setM0Speed(0);  // turn motor off
+           }
+         }
+         currPos = results;  // Update current position (units of feet).
+       }
+       
+       if (heightDiff < 0) // Positive value means drain is higher than target value
+       {
+         counts = 0;
+         qik.setM0Speed(-40);  // turn motor on in reverse direction
+         while (counts < countVal) {
+           counts = counts + encoder.getCountsAndResetM1();
+           if (counts >= countVal) {
+             qik.setM0Speed(0);  // turn motor off
+           }
+         }
+         currPos = results;  // Update current position (units of feet).
+       }
+     moveFlag = true; // set moveFlag true since we've moved once this minute
+    }
     //********************************
      // For debugging
        // Print current time to serial monitor
