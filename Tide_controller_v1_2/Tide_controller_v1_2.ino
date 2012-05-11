@@ -305,10 +305,8 @@ void loop(void)
        qik.setM0Speed(20);  // turn motor on in forward direction
        while (counts < countVal) {
          counts = counts + encoder.getCountsAndResetM1();
-         if (counts >= countVal) {
-           qik.setM0Speed(0);  // turn motor off
-         }
        }
+       qik.setM0Speed(0);  // Turn motor off
        currPos = results;  // Update current position (units of feet).
      }
      // **************** Raise drain height to raise tide level ************
@@ -320,32 +318,19 @@ void loop(void)
        qik.setM0Speed(-40);  // turn motor on in reverse direction
        while (counts > countVal) {
          counts = counts + encoder.getCountsAndResetM1();
-         if (counts <= countVal) {
-           qik.setM0Speed(0);  // turn motor off
-         }
        }
+       qik.setM0Speed(0);  // turn motor off
        currPos = results;  // Update current position (units of feet).
      }
 
-
-    Serial.print("currHours: ");
-    Serial.print(currHours);
-    Serial.print(", Tide: ");
+    Serial.print("Tide: ");
     Serial.print(results, 3);
     Serial.println(" ft.");
-    
-    Serial.print("Height diff: ");
-    Serial.print(heightDiff);
-    Serial.println(" ft.");
-    
+
     Serial.print("Counts to turn: ");
     Serial.print(countVal);
-    Serial.print(", counts executed: ");
-    Serial.println(counts);
-    
     // end of debugging stuff
     //********************************   
-//   delay(300);
   }    // end of if (now.minute() != currMinute) statement
 
  // TODO: include limit switch checking routines
