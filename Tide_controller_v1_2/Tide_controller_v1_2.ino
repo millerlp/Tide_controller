@@ -112,6 +112,7 @@ const int adjustGMT = 8;     // Time zone adjustment to get time in GMT. Make su
                              // No daylight savings time adjustments should be made. 
 
 int secs = 0; // Keep track of previous seconds value in main loop
+int currMinute; // Keep track of current minute value in main loop
 //------------------------------------------------------------------------------------------------
 // Motor controller setup section
 /*
@@ -130,15 +131,18 @@ PololuWheelEncoders encoder;
 
 long Total = 0;  // Total turns during this actuation
 float TotalTurns = 0; // Total turns overall (i.e. current position)
-float currPos = 3.0; // Current position, based on limit switch height. Units = ft.
-const float countConv = 0.00008177; // Conversion factor, feet per encoder count
+float currPos = 7.0; // Current position, based on limit switch height. Units = ft.
+float results = currPos;
+
+//const float countConv = 0.00008177; // Conversion factor, feet per encoder count
                                     // Divide desired travel (in ft.) by this value
                                     // to calculate the number of encoder counts that
                                     // must occur. 
-float heightDiff;    // Float variable to hold height difference                                    
-unsigned long countVal = 0;     // Store the number of encoder counts needed
+const float countConv = 0.000092856;  // Value for 1.135" diam spool
+float heightDiff;    // Float variable to hold height difference, in ft.                                    
+long countVal = 0;     // Store the number of encoder counts needed
                                 // to achieve the new height
-unsigned long counts = 0;       // Store the number of encoder counts that have
+long counts = 0;       // Store the number of encoder counts that have
                                 // gone by so far.
 //---------------------------------------------------------------------------
 
@@ -152,9 +156,10 @@ void setup(void)
 
   //************************************
   // For debugging
-  Serial.begin(9600);
+  Serial.begin(38400);
   //************************************
   DateTime now = RTC.now();
+  currMinute = now.minute(); // Store current minute value
   Serial.print(now.year(), DEC);
   Serial.print('/');
   Serial.print(now.month(), DEC);
@@ -163,9 +168,21 @@ void setup(void)
   Serial.print(' ');
   Serial.print(now.hour(), DEC);
   Serial.print(':');
-  Serial.print(now.minute(), DEC);
+  if (now.minute() < 10) {
+    Serial.print("0");
+    Serial.print(now.minute());
+  }
+  else if (now.minute() >= 10) {
+    Serial.print(now.minute());
+  }
   Serial.print(':');
-  Serial.println(now.second(), DEC);
+  if (now.second() < 10) {
+    Serial.print("0");
+    Serial.println(now.second());
+  }
+  else if (now.second() >= 10) {
+    Serial.println(now.second());
+  }
   delay(2000);
   
   // Initialize qik 2s9v1 serial motor controller
@@ -200,74 +217,55 @@ void loop(void)
   
   // If it is the start of a new minute, calculate new tide height and
   // adjust motor position
-  if (now.second() == 0) {
-    if (!moveFlag) {
-      // Calculate difference between current year and starting year.
-      YearIndx = startYear - now.year();
-      // Calculate hours since start of current year. Hours = seconds / 3600
-      currHours = (now.unixtime() - startSecs[YearIndx]) / float(3600);
-      // Shift currHours to Greenwich Mean Time
-      currHours = currHours + adjustGMT;
+  if (now.minute() != currMinute) {
+    // If now.minute doesn't equal currMinute, a new minute has turned
+    // over, so it's time to update the tide height. We only want to do
+    // this once per minute. 
+    currMinute = now.minute();                   // update currMinute
+    
+    // Calculate difference between current year and starting year.
+    YearIndx = startYear - now.year();
+    // Calculate hours since start of current year. Hours = seconds / 3600
+    currHours = (now.unixtime() - startSecs[YearIndx]) / float(3600);
+    // Shift currHours to Greenwich Mean Time
+    currHours = currHours + adjustGMT;
+    
+    Serial.print("Previous tide ht: ");
+    Serial.print(results);
+    Serial.println(" ft.:");   
+    // *****************Calculate current tide height*************
+    results = Datum; // initialize results variable, units of feet.
+    for (int harms = 0; harms < 37; harms++) {
+      // Many of the constants are stored as unsigned integers to save space. These
+      // steps convert them back to their real values.
+      currNodefactor = Nodefactor[YearIndx][harms] / float(10000);
+      currAmp = Amp[harms] / float(1000);
+      currEquilarg = Equilarg[YearIndx][harms] / float(100);
+      currKappa = Kappa[harms] / float(10);
+      currSpeed = Speed[harms]; // Speed was not scaled to integer
       
-      // *****************Calculate current tide height*************
-      float results = Datum; // initialize results variable, units of feet.
-      for (int harms = 0; harms < 37; harms++) {
-        // Many of the constants are stored as unsigned integers to save space. These
-        // steps convert them back to their real values.
-        currNodefactor = Nodefactor[YearIndx][harms] / float(10000);
-        currAmp = Amp[harms] / float(1000);
-        currEquilarg = Equilarg[YearIndx][harms] / float(100);
-        currKappa = Kappa[harms] / float(10);
-        currSpeed = Speed[harms]; // Speed was not scaled to integer
-        
-      // Calculate each component of the overall tide equation 
-      // The currHours value is assumed to be in hours from the start of the
-      // year, in the Greenwich Mean Time zone, not the local time zone.
-      // There is no daylight savings time adjustment here.  
-        results = results + (currNodefactor * currAmp * cos( (currSpeed * currHours + currEquilarg - currKappa) * DEG_TO_RAD));
-      }
-       //******************End of Tide Height calculation*************
-       
-       // Calculate height difference between currPos (drain height) and
-       // new tide height. Value may be positive or negative depending on
-       // direction of the tide. 
-       heightDiff = currPos - results; // Units of feet.
-       // Convert heightDiff into number of encoder counts that must pass
-       // to achivee the new height. Absolute value is used here since we 
-       // don't care about direction in this step. The result is cast as 
-       // an unsigned long integer.
-       countVal = (unsigned long)(abs(heightDiff) / countConv);
-       
-       if (heightDiff > 0) // Positive value means drain is higher than target value
-       {
-         counts = 0;
-         qik.setM0Speed(40);  // turn motor on in forward direction
-         while (counts < countVal) {
-           counts = counts + encoder.getCountsAndResetM1();
-           if (counts >= countVal) {
-             qik.setM0Speed(0);  // turn motor off
-           }
-         }
-         currPos = results;  // Update current position (units of feet).
-       }
-       
-       if (heightDiff < 0) // Positive value means drain is higher than target value
-       {
-         counts = 0;
-         qik.setM0Speed(-40);  // turn motor on in reverse direction
-         while (counts < countVal) {
-           counts = counts + encoder.getCountsAndResetM1();
-           if (counts >= countVal) {
-             qik.setM0Speed(0);  // turn motor off
-           }
-         }
-         currPos = results;  // Update current position (units of feet).
-       }
-     moveFlag = true; // set moveFlag true since we've moved once this minute
+    // Calculate each component of the overall tide equation 
+    // The currHours value is assumed to be in hours from the start of the
+    // year, in the Greenwich Mean Time zone, not the local time zone.
+    // There is no daylight savings time adjustment here.  
+      results = results + (currNodefactor * currAmp * cos( (currSpeed * currHours + currEquilarg - currKappa) * DEG_TO_RAD));
     }
+    //******************End of Tide Height calculation*************
+     
+     // Calculate height difference between currPos (drain height) and
+     // new tide height. Value may be positive or negative depending on
+     // direction of the tide. 
+     heightDiff = currPos - results;       // Units of feet.
+     // Convert heightDiff into number of encoder counts that must pass
+     // to achieve the new height. Absolute value is used here since we 
+     // don't care about direction in this step. The result is cast as 
+     // an unsigned long integer.
+     countVal = (long)(heightDiff / countConv);
+     
+     
     //********************************
-     // For debugging
-       // Print current time to serial monitor
+    // For debugging
+    // Print current time to serial monitor
     Serial.print(now.year(), DEC);
     Serial.print('/');
     Serial.print(now.month(), DEC);
@@ -276,24 +274,79 @@ void loop(void)
     Serial.print(' ');
     Serial.print(now.hour(), DEC);
     Serial.print(':');
-    Serial.print(now.minute(), DEC);
+    if (now.minute() < 10) {
+      Serial.print("0");
+      Serial.print(now.minute());
+    }
+    else if (now.minute() >= 10) {
+      Serial.print(now.minute());
+    }
     Serial.print(':');
-    Serial.println(now.second(), DEC);
+    if (now.second() < 10) {
+      Serial.print("0");
+      Serial.println(now.second());
+    }
+    else if (now.second() >= 10) {
+      Serial.println(now.second());
+    }
+     Serial.print("Height diff: ");
+     Serial.println(heightDiff);
+     Serial.print("countVal calc: ");
+     Serial.println(countVal);
+     //*********************************
+     
+     
+     // ************** Lower drain height to lower tide level ***********
+     if (heightDiff > 0) // Positive value means drain is higher than target value
+     {
+       Serial.println("Turning motor forward to lower drain");
+       counts = 0;
+       qik.setM0Speed(20);  // turn motor on in forward direction
+       while (counts < countVal) {
+         counts = counts + encoder.getCountsAndResetM1();
+         if (counts >= countVal) {
+           qik.setM0Speed(0);  // turn motor off
+         }
+       }
+       currPos = results;  // Update current position (units of feet).
+     }
+     // **************** Raise drain height to raise tide level ************
+     else if (heightDiff < 0) // Positive value means drain is higher than target value
+     {
+       Serial.println("Turning motor reverse to raise drain");
+//       countVal = countVal * -1; // Change countVal direction
+       counts = 0;
+       qik.setM0Speed(-40);  // turn motor on in reverse direction
+       while (counts > countVal) {
+         counts = counts + encoder.getCountsAndResetM1();
+         if (counts <= countVal) {
+           qik.setM0Speed(0);  // turn motor off
+         }
+       }
+       currPos = results;  // Update current position (units of feet).
+     }
+
+
     Serial.print("currHours: ");
     Serial.print(currHours);
     Serial.print(", Tide: ");
     Serial.print(results, 3);
     Serial.println(" ft.");
-     // end of debugging stuff
-     //********************************   
-   delay(300);
-  }
+    
+    Serial.print("Height diff: ");
+    Serial.print(heightDiff);
+    Serial.println(" ft.");
+    
+    Serial.print("Counts to turn: ");
+    Serial.print(countVal);
+    Serial.print(", counts executed: ");
+    Serial.println(counts);
+    
+    // end of debugging stuff
+    //********************************   
+//   delay(300);
+  }    // end of if (now.minute() != currMinute) statement
 
- 
- // TODO: calculate how far motor needs to turn to reach new 
- //       tide height.
- // TODO: monitor interrupts to count motor revolutions and 
- //       and stop motor at correct new tide height.
  // TODO: include limit switch checking routines
  
 } // end of main loop
