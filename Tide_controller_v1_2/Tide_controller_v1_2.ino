@@ -131,14 +131,15 @@ PololuWheelEncoders encoder;
 
 long Total = 0;  // Total turns during this actuation
 float TotalTurns = 0; // Total turns overall (i.e. current position)
-float currPos = 7.0; // Current position, based on limit switch height. Units = ft.
+float currPos = 6.0; // Current position, based on limit switch height. Units = ft.
 float results = currPos;
 
-//const float countConv = 0.00008177; // Conversion factor, feet per encoder count
-                                    // Divide desired travel (in ft.) by this value
-                                    // to calculate the number of encoder counts that
-                                    // must occur. 
-const float countConv = 0.000092856;  // Value for 1.135" diam spool
+// Conversion factor, feet per encoder count
+// Divide desired travel (in ft.) by this value
+// to calculate the number of encoder counts that
+// must occur.
+const float countConv = 0.0000924479;   // Value for 1.130" diam spool
+
 float heightDiff;    // Float variable to hold height difference, in ft.                                    
 long countVal = 0;     // Store the number of encoder counts needed
                                 // to achieve the new height
