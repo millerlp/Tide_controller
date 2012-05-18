@@ -1,5 +1,9 @@
 /* Tide_controller_v1.2 
-
+  TODO: switch to external interrupts instead of pin-change interrupts
+  TODO: implement limit switches
+  TODO: switch to PWM motor control
+  TODO: Move integer harmonic constants into PROGMEM
+  
   Copyright (C) 2012 Luke Miller
   
       This program is free software: you can redistribute it and/or modify
