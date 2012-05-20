@@ -1,5 +1,4 @@
 /* Tide_controller_v1.3 
-  TODO: switch to external interrupts instead of pin-change interrupts
   TODO: implement limit switches
   TODO: switch to PWM motor control
   TODO: Move integer harmonic constants into PROGMEM
