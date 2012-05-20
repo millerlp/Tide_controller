@@ -147,6 +147,8 @@ PololuQik2s9v1 qik(8, 9, 10);
 
 //-----------------------------------------------
 // External interrupt setup for motor position encoder
+// Code adapted from
+// http://www.billporter.info/sagar-update-new-motor-controller-and-motors/
 #define c_EncoderPinInterrupt 0    // interrupt 0 (digital pin 2 on Ard328)
 #define c_EncoderPinA 2            // digital pin 2
 #define c_EncoderPinB 4            // digital pin 4 on Ard328
