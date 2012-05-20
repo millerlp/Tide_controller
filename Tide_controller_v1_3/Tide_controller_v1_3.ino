@@ -40,17 +40,30 @@
 
 // Initial setup
 
+//*******************************
+// Header files for dealing with external interrupts
+// Note that the digitalWriteFast header file needs to be updated to work with
+// Arduino1.0. The change is simple, just open digitalWriteFast.h and change 
+// the initial line from #include "WProgram.h" to #include "Arduino.h"
+// digitalWriteFast is available from 
+// http://code.google.com/p/digitalwritefast/
+#include "Arduino.h"
+#include <digitalWriteFast.h> 
+//*******************************
+// Header files for using Pololu serial motor controller
 #include <mySoftwareSerial.h>
 #include <PololuQik.h>
-#include <myPololuWheelEncoders.h>
+
+//*******************************
+// Header files for talking to real time clock
 #include <Wire.h>
 #include <RTClib.h>
 //----------------------------------------------------------------------------------
 // Initialize harmonic constant arrays. These each hold 37 values for
 // the tide site that was extracted using the R scripts. If you wish
 // to make predictions for a different site, it will be necessary to
-// replace the Amp and Kappa values with values particular to your
-// site. These are available from NOAA's http://tidesandcurrent.noaa.gov site.
+// replace the Amp and Kappa values with values for your site. 
+// These are available from NOAA's http://tidesandcurrent.noaa.gov site.
 // Kappa here is referred to as "Phase" on NOAA's site. The order of the
 // constants is shown below in the names. Unfortunately this does not match
 // NOAA's order, so you will have to rearrange NOAA's values if you want to 
@@ -67,9 +80,9 @@
 const float Datum = 2.8281 ; // units in feet
 // Harmonic constant names: J1, K1, K2, L2, M1, M2, M3, M4, M6, M8, N2, 2N2, O1, OO1, P1, Q1, 2Q1, R2, S1, S2, S4, S6, T2, LDA2, MU2, NU2, RHO1, MK3, 2MK3, MN4, MS4, 2SM2, MF, MSF, MM, SA, SSA
 // These names match the NOAA names, except LDA2 here is LAM2 on NOAA's site
-// Amp scaled by 1000, divide by 1000 to convert to original float value
+// Amp scaled by 1000, so divide by 1000 to convert to original float value
 const unsigned int Amp[] = {71,1199,121,23,38,1616,0,0,0,0,368,44,753,36,374,134,16,3,33,428,0,0,22,11,41,72,26,0,0,0,0,0,0,0,0,157,90};
-// Kappa scaled by 10, , so divide by 10 to convert to original float value
+// Kappa scaled by 10, so divide by 10 to convert to original float value
 const unsigned int Kappa[] = {2334,2198,1720,2202,2259,1811,0,0,0,0,1546,1239,2034,2502,2156,1951,1994,1802,3191,1802,0,0,1678,1807,1146,1611,1966,0,0,0,0,0,0,0,0,2060,2839};
 // Speed is unscaled, stored as the original float values
 const float Speed[] = {15.58544,15.04107,30.08214,29.52848,14.49669,28.9841,43.47616,57.96821,86.95231,115.9364,28.43973,27.89535,13.94304,16.1391,14.95893,13.39866,12.85429,30.04107,15,30,60,90,29.95893,29.45563,27.96821,28.51258,13.47151,44.02517,42.92714,57.42383,58.9841,31.0159,1.098033,1.015896,0.5443747,0.0410686,0.0821373};
@@ -114,6 +127,7 @@ float currHours = 0;          // Elapsed hours since start of year
 const int adjustGMT = 8;     // Time zone adjustment to get time in GMT. Make sure this is
                              // correct for the local standard time of the tide station. 
                              // No daylight savings time adjustments should be made. 
+                             // 8 = Pacific Standard Time (America/Los_Angeles)
 
 int secs = 0; // Keep track of previous seconds value in main loop
 int currMinute; // Keep track of current minute value in main loop
@@ -131,7 +145,15 @@ Digital Pin 10 -> RESET
 */
 PololuQik2s9v1 qik(8, 9, 10);
 
-PololuWheelEncoders encoder;
+//-----------------------------------------------
+// External interrupt setup for motor position encoder
+#define c_EncoderPinInterrupt 0    // interrupt 0 (digital pin 2 on Ard328)
+#define c_EncoderPinA 2            // digital pin 2
+#define c_EncoderPinB 4            // digital pin 4 on Ard328
+//#define EncoderIsReversed        // uncomment if encoder counts the wrong direction
+volatile bool _EncoderBSet;
+volatile long _EncoderTicks = 0;
+//-----------------------------------------------
 
 long Total = 0;  // Total turns during this actuation
 float TotalTurns = 0; // Total turns overall (i.e. current position)
@@ -142,13 +164,27 @@ float results = currPos;
 // Divide desired travel (in ft.) by this value
 // to calculate the number of encoder counts that
 // must occur.
-const float countConv = 0.0000924479;   // Value for 1.130" diam spool
+const float countConv = 0.00036979;   // Value for 1.130" diam spool
+/*  1.13" diam spool x pi = 3.55" per output shaft revolution
+    3.55" per rev / 12" = 0.2958333 ft per output shaft revolution
+    I use a 50:1 gear reduction Pololu motor, so 1 output shaft rev
+    takes 50 motor armature revolutions. If the encoder interrupt only
+    triggers (counts) on rising signals on line A, there will be 16 
+    triggers per motor armature revolution or (16 x 50 = 800) counts 
+    per output shaft revolution.
+    0.295833 ft per rev / 800 counts per rev = 0.00036979 ft per count
+    16 counts per revolution = 360/16 = 22.5° resolution on motor 
+    armature position, or 0.45° resolution on output shaft position.
+*/
 
 float heightDiff;    // Float variable to hold height difference, in ft.                                    
 long countVal = 0;     // Store the number of encoder counts needed
                                 // to achieve the new height
 long counts = 0;       // Store the number of encoder counts that have
                                 // gone by so far.
+
+const int motorSpeed = 20; // Specify motor rotation speed (0 to 127) for
+                           // qik2s9v1 motor controller
 //---------------------------------------------------------------------------
 
 
@@ -158,10 +194,16 @@ void setup(void)
 {  
   Wire.begin();
   RTC.begin();
-
-  //************************************
-  // For debugging
-  Serial.begin(38400);
+  //--------------------------------------------------
+  //Quadrature encoders
+  pinMode(c_EncoderPinA, INPUT);  // sets encoder pin A as input
+  digitalWrite(c_EncoderPinA, LOW);  // turn on pullup resistor
+  pinMode(c_EncoderPinB, INPUT);  // sets encoder pin B as input
+  digitalWrite(c_EncoderPinB, LOW); // turn on pullup resistor
+  attachInterrupt(c_EncoderPinInterrupt, HandleInterruptA, RISING);
+  //--------------------------------------------------
+  // For debugging output to serial monitor
+  Serial.begin(115200);
   //************************************
   DateTime now = RTC.now();
   currMinute = now.minute(); // Store current minute value
@@ -192,15 +234,9 @@ void setup(void)
   
   // Initialize qik 2s9v1 serial motor controller
   // The value in parentheses is the serial comm speed
-  // for the 2s9v1 controller
+  // for the 2s9v1 controller. 38400 is the maximum.
   qik.init(38400);
 
-  //  encoder.init(); 255 refers to non-existing pins
-  // Requires two pins per encoder, here on pins 2,3
-  // Take the motor's encoder lines A and B (yellow and white on my motor)
-  // and connect them to pins 2 and 3 on the Arduino.
-  // Additionally, supply the encoder +5V from the Arduino's 5V line
-  encoder.init(2,3,255,255);
   
   // TODO: Create limit switch routine for initializing tide height value
   //       after a restart. 
@@ -213,10 +249,6 @@ void setup(void)
 // Welcome to the Main loop
 void loop(void)
 {
-  // Set movement flag to false, no move has occurred (Is this in right place?)
-  // TODO: need to keep track of minute value and only reset moveFlag when minute
-  //       rolls over.
-  boolean moveFlag = false;
   // Get current time, store in object 'now'
   DateTime now = RTC.now();
   
@@ -257,14 +289,13 @@ void loop(void)
     }
     //******************End of Tide Height calculation*************
      
-     // Calculate height difference between currPos (drain height) and
+     // Calculate height difference between currPos and
      // new tide height. Value may be positive or negative depending on
      // direction of the tide. 
      heightDiff = currPos - results;       // Units of feet.
      // Convert heightDiff into number of encoder counts that must pass
-     // to achieve the new height. Absolute value is used here since we 
-     // don't care about direction in this step. The result is cast as 
-     // an unsigned long integer.
+     // to achieve the new height. The result is cast as an unsigned 
+     // long integer.
      countVal = (long)(heightDiff / countConv);
      
      
@@ -298,41 +329,89 @@ void loop(void)
      Serial.println(heightDiff);
      Serial.print("countVal calc: ");
      Serial.println(countVal);
+     Serial.print("Target height: ");
+     Serial.println(results);
      //*********************************
      
-     
+     _EncoderTicks = 0;  // Reset _EncoderTicks value before moving motor
      // ************** Lower drain height to lower tide level ***********
+     // TODO: check if drain is above or below physical height limits and
+     // skip this section if so. 
      if (heightDiff > 0) // Positive value means drain is higher than target value
      {
        Serial.println("Turning motor forward to lower drain");
-       counts = 0;
-       qik.setM0Speed(20);  // turn motor on in forward direction
-       while (counts < countVal) {
-         counts = counts + encoder.getCountsAndResetM1();
+//       counts = 0;
+//       qik.setM0Speed(20);  // turn motor on in forward direction
+
+       /*  The nested while loops here are necessary to compensate for a weird
+           condition where the inner while loop will occasionally quit before
+           _EncoderTicks actually hits the target value. If that happens, the 
+           outer while loop runs again to finish the last few missing turns.
+      */
+       while(_EncoderTicks <= countVal) {
+         //  Turn motor 0 on forward
+         qik.setM0Speed(motorSpeed);
+         while (1) {
+           if (_EncoderTicks >= countVal) {
+             qik.setM0Speed(0);  // shut off motor
+             break;  // break out of while loop
+           }
+         }
        }
-       qik.setM0Speed(0);  // Turn motor off
-       currPos = results;  // Update current position (units of feet).
+       // Calculate any overshoot of the desired position
+       counts = _EncoderTicks - countVal;
+       // Subtract the overshoot to 'results' to save the actual currPos
+       currPos = results - (counts * countConv);
+       
+//       while (counts < countVal) {
+//         counts = counts + encoder.getCountsAndResetM1();
+//       }
+//       qik.setM0Speed(0);  // Turn motor off
+//       currPos = results;  // Update current position (units of feet).
      }
      // **************** Raise drain height to raise tide level ************
-     else if (heightDiff < 0) // Positive value means drain is higher than target value
+     else if (heightDiff < 0) // Negative value means drain is lower than target value
      {
        Serial.println("Turning motor reverse to raise drain");
-//       countVal = countVal * -1; // Change countVal direction
-       counts = 0;
-       qik.setM0Speed(-40);  // turn motor on in reverse direction
-       while (counts > countVal) {
-         counts = counts + encoder.getCountsAndResetM1();
+       countVal = countVal * -1;  // Switch countVal sign
+       while(_EncoderTicks > countVal) {
+         //  Turn motor 0 on reverse (reverse should be negative value)
+         qik.setM0Speed((motorSpeed * -1));
+         while (1) {
+           if (_EncoderTicks <= countVal) {
+             qik.setM0Speed(0);  // shut off motor
+             break;  // break out of while loop
+           }
+         }
        }
-       qik.setM0Speed(0);  // turn motor off
-       currPos = results;  // Update current position (units of feet).
-     }
-
-    Serial.print("Tide: ");
-    Serial.print(results, 3);
-    Serial.println(" ft.");
-
-    Serial.print("Counts to turn: ");
-    Serial.print(countVal);
+       // Calculate any overshoot of the desired position
+       // _EncoderTicks should be a negative value
+       counts = _EncoderTicks - countVal;
+       // Switch sign of counts
+       counts = counts * -1;
+       // Add the overshoot to 'results' to save the actual currPos
+       currPos = results + (counts * countConv);
+       
+     }  // end of else if statement
+     Serial.print("Current Position: ");
+     Serial.println(currPos);
+     
+//       countVal = countVal * -1; // Change countVal direction
+//       counts = 0;
+//       qik.setM0Speed(-40);  // turn motor on in reverse direction
+//       while (counts > countVal) {
+//         counts = counts + encoder.getCountsAndResetM1();
+//       }
+//       qik.setM0Speed(0);  // turn motor off
+//       currPos = results;  // Update current position (units of feet).
+//     }
+      
+//    Serial.print("Tide: ");
+//    Serial.print(results, 3);
+//    Serial.println(" ft.");
+//
+//    Serial.print("Counts to turn: ");
+//    Serial.print(countVal);
     // end of debugging stuff
     //********************************   
   }    // end of if (now.minute() != currMinute) statement
@@ -340,3 +419,20 @@ void loop(void)
  // TODO: include limit switch checking routines
  
 } // end of main loop
+
+//-----------------------------------------------------------------
+//  Welcome to the interrupt service routine for counting
+//  motor encoder triggers (including rotation direction).
+//  Interrupt service routine should trigger each time
+//  digital pin 2 (interrupt 0) get a RISING signal.
+void HandleInterruptA()
+{
+  //Test transition of pin B, we already know pin A just went high
+  _EncoderBSet = digitalReadFast(c_EncoderPinB); // read pin B
+
+#ifdef EncoderIsReversed
+    _EncoderTicks += _EncoderBSet ? -1 : +1;
+#else
+  _EncoderTicks -= _EncoderBSet ? -1 : +1;    
+#endif
+}
