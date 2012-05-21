@@ -184,7 +184,7 @@ long countVal = 0;     // Store the number of encoder counts needed
 long counts = 0;       // Store the number of encoder counts that have
                                 // gone by so far.
 
-const int motorSpeed = 20; // Specify motor rotation speed (0 to 127) for
+const int motorSpeed = 40; // Specify motor rotation speed (0 to 127) for
                            // qik2s9v1 motor controller
 //---------------------------------------------------------------------------
 
@@ -359,6 +359,11 @@ void loop(void)
            }
          }
        }
+       Serial.print("Encoder Ticks: ");
+       Serial.print(_EncoderTicks);
+       Serial.print(", Target: ");
+       Serial.println(countVal);
+       
        // Calculate any overshoot of the desired position
        counts = _EncoderTicks - countVal;
        // Subtract the overshoot to 'results' to save the actual currPos
@@ -388,6 +393,12 @@ void loop(void)
        // Calculate any overshoot of the desired position
        // _EncoderTicks should be a negative value
        counts = _EncoderTicks - countVal;
+       
+       Serial.print("Encoder Ticks: ");
+       Serial.print(_EncoderTicks);
+       Serial.print(", Target: ");
+       Serial.println(countVal);
+       
        // Switch sign of counts
        counts = counts * -1;
        // Add the overshoot to 'results' to save the actual currPos
