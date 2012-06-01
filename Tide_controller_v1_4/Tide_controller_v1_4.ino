@@ -48,11 +48,29 @@
 // http://code.google.com/p/digitalwritefast/
 //#include "Arduino.h"
 //#include <digitalWriteFast.h> 
-
+//*******************************
+/*  Stepper motor notes
+    I'm using a Big Easy Driver to control a unipolar stepper motor. This
+    takes two input wires: a direction wire and step wire. The direction is
+    set by pulling the direction pin high or low. A single step is taken by 
+    pulling the step pin high. 
+    By default, when you leave MS1 and MS2 high on the Big Easy Driver, the 
+    driver defaults to 1/8 microstep mode. If a full step is 1.8° (200 steps
+    per revolution), then microstep mode moves 1/8 of that, 
+    (1.8° * 1/8 = 0.225° per step), or 1600 microsteps per full revolution 
+    of the motor. 
+   
+*/
+const int stepperDir = 8;  // define stepper direction pin. Connect to 
+                           // Big Easy Driver DIR pin
+const int stepperStep = 9; // define stepper step pin. Connect to 
+                           // Big Easy Driver STEP pin.
+                           
 //*******************************
 // Header files for talking to real time clock
 #include <Wire.h>
 #include <RTClib.h>
+//*******************************
 //----------------------------------------------------------------------------------
 // Initialize harmonic constant arrays. These each hold 37 values for
 // the tide site that was extracted using the R scripts. If you wish
@@ -188,6 +206,12 @@ void setup(void)
 //  digitalWrite(c_EncoderPinB, LOW); // turn on pullup resistor
 //  attachInterrupt(c_EncoderPinInterrupt, HandleInterruptA, RISING);
   //--------------------------------------------------
+  pinMode(stepperDir, OUTPUT);   // direction pin for Big Easy Driver
+  pinMode(stepperStep, OUTPUT);  // step pin for Big Easy driver. One step per rise.
+  digitalWrite(stepperDir, LOW);
+  digitalWrite(stepperStep, LOW);
+  
+  
   // For debugging output to serial monitor
   Serial.begin(115200);
   //************************************
