@@ -46,12 +46,8 @@
 // the initial line from #include "WProgram.h" to #include "Arduino.h"
 // digitalWriteFast is available from 
 // http://code.google.com/p/digitalwritefast/
-#include "Arduino.h"
-#include <digitalWriteFast.h> 
-//*******************************
-// Header files for using Pololu serial motor controller
-#include <mySoftwareSerial.h>
-#include <PololuQik.h>
+//#include "Arduino.h"
+//#include <digitalWriteFast.h> 
 
 //*******************************
 // Header files for talking to real time clock
@@ -131,33 +127,22 @@ const int adjustGMT = 8;     // Time zone adjustment to get time in GMT. Make su
 int secs = 0; // Keep track of previous seconds value in main loop
 int currMinute; // Keep track of current minute value in main loop
 //------------------------------------------------------------------------------------------------
-// Motor controller setup section
-/*
-Required connections between Arduino and qik 2s9v1:
 
-      Arduino    qik 2s9v1
-           5V -> VCC
-          GND -> GND
-Digital Pin 8 -> TX pin on 2s9v1 (optional if you don't need talk-back from the unit) 
-Digital Pin 9 -> RX pin on 2s9v1
-Digital Pin 10 -> RESET
-*/
-PololuQik2s9v1 qik(8, 9, 10);
 
 //-----------------------------------------------
 // External interrupt setup for motor position encoder
 // Code adapted from
 // http://www.billporter.info/sagar-update-new-motor-controller-and-motors/
-#define c_EncoderPinInterrupt 0    // interrupt 0 (digital pin 2 on Ard328)
-#define c_EncoderPinA 2            // digital pin 2
-#define c_EncoderPinB 4            // digital pin 4 on Ard328
-//#define EncoderIsReversed        // uncomment if encoder counts the wrong direction
-volatile bool _EncoderBSet;
-volatile long _EncoderTicks = 0;
+//#define c_EncoderPinInterrupt 0    // interrupt 0 (digital pin 2 on Ard328)
+//#define c_EncoderPinA 2            // digital pin 2
+//#define c_EncoderPinB 4            // digital pin 4 on Ard328
+////#define EncoderIsReversed        // uncomment if encoder counts the wrong direction
+//volatile bool _EncoderBSet;
+//volatile long _EncoderTicks = 0;
 //-----------------------------------------------
 
-long Total = 0;  // Total turns during this actuation
-float TotalTurns = 0; // Total turns overall (i.e. current position)
+//long Total = 0;  // Total turns during this actuation
+//float TotalTurns = 0; // Total turns overall (i.e. current position)
 float currPos = 6.0; // Current position, based on limit switch height. Units = ft.
 float results = currPos;
 
@@ -184,8 +169,8 @@ long countVal = 0;     // Store the number of encoder counts needed
 long counts = 0;       // Store the number of encoder counts that have
                                 // gone by so far.
 
-const int motorSpeed = 40; // Specify motor rotation speed (0 to 127) for
-                           // qik2s9v1 motor controller
+//const int motorSpeed = 40; // Specify motor rotation speed (0 to 127) for
+//                           // qik2s9v1 motor controller
 //---------------------------------------------------------------------------
 
 
@@ -197,11 +182,11 @@ void setup(void)
   RTC.begin();
   //--------------------------------------------------
   //Quadrature encoders
-  pinMode(c_EncoderPinA, INPUT);  // sets encoder pin A as input
-  digitalWrite(c_EncoderPinA, LOW);  // turn on pullup resistor
-  pinMode(c_EncoderPinB, INPUT);  // sets encoder pin B as input
-  digitalWrite(c_EncoderPinB, LOW); // turn on pullup resistor
-  attachInterrupt(c_EncoderPinInterrupt, HandleInterruptA, RISING);
+//  pinMode(c_EncoderPinA, INPUT);  // sets encoder pin A as input
+//  digitalWrite(c_EncoderPinA, LOW);  // turn on pullup resistor
+//  pinMode(c_EncoderPinB, INPUT);  // sets encoder pin B as input
+//  digitalWrite(c_EncoderPinB, LOW); // turn on pullup resistor
+//  attachInterrupt(c_EncoderPinInterrupt, HandleInterruptA, RISING);
   //--------------------------------------------------
   // For debugging output to serial monitor
   Serial.begin(115200);
@@ -236,7 +221,7 @@ void setup(void)
   // Initialize qik 2s9v1 serial motor controller
   // The value in parentheses is the serial comm speed
   // for the 2s9v1 controller. 38400 is the maximum.
-  qik.init(38400);
+//  qik.init(38400);
 
   
   // TODO: Create limit switch routine for initializing tide height value
@@ -334,7 +319,7 @@ void loop(void)
      Serial.println(results);
      //*********************************
      
-     _EncoderTicks = 0;  // Reset _EncoderTicks value before moving motor
+//     _EncoderTicks = 0;  // Reset _EncoderTicks value before moving motor
      // ************** Lower drain height to lower tide level ***********
      // TODO: check if drain is above or below physical height limits and
      // skip this section if so. 
@@ -349,25 +334,25 @@ void loop(void)
            _EncoderTicks actually hits the target value. If that happens, the 
            outer while loop runs again to finish the last few missing turns.
       */
-       while(_EncoderTicks <= countVal) {
-         //  Turn motor 0 on forward
-         qik.setM0Speed(motorSpeed);
-         while (1) {
-           if (_EncoderTicks >= countVal) {
-             qik.setM0Speed(0);  // shut off motor
-             break;  // break out of while loop
-           }
-         }
-       }
-       Serial.print("Encoder Ticks: ");
-       Serial.print(_EncoderTicks);
-       Serial.print(", Target: ");
-       Serial.println(countVal);
-       
+//       while(_EncoderTicks <= countVal) {
+//         //  Turn motor 0 on forward
+//         qik.setM0Speed(motorSpeed);
+//         while (1) {
+//           if (_EncoderTicks >= countVal) {
+//             qik.setM0Speed(0);  // shut off motor
+//             break;  // break out of while loop
+//           }
+//         }
+//       }
+//       Serial.print("Encoder Ticks: ");
+//       Serial.print(_EncoderTicks);
+//       Serial.print(", Target: ");
+//       Serial.println(countVal);
+//       
        // Calculate any overshoot of the desired position
-       counts = _EncoderTicks - countVal;
+//       counts = _EncoderTicks - countVal;
        // Subtract the overshoot to 'results' to save the actual currPos
-       currPos = results - (counts * countConv);
+//       currPos = results - (counts * countConv);
        
 //       while (counts < countVal) {
 //         counts = counts + encoder.getCountsAndResetM1();
@@ -379,26 +364,26 @@ void loop(void)
      else if (heightDiff < 0) // Negative value means drain is lower than target value
      {
        Serial.println("Turning motor reverse to raise drain");
-       countVal = countVal * -1;  // Switch countVal sign
-       while(_EncoderTicks > countVal) {
-         //  Turn motor 0 on reverse (reverse should be negative value)
-         qik.setM0Speed((motorSpeed * -1));
-         while (1) {
-           if (_EncoderTicks <= countVal) {
-             qik.setM0Speed(0);  // shut off motor
-             break;  // break out of while loop
-           }
-         }
-       }
+//       countVal = countVal * -1;  // Switch countVal sign
+//       while(_EncoderTicks > countVal) {
+//         //  Turn motor 0 on reverse (reverse should be negative value)
+//         qik.setM0Speed((motorSpeed * -1));
+//         while (1) {
+//           if (_EncoderTicks <= countVal) {
+//             qik.setM0Speed(0);  // shut off motor
+//             break;  // break out of while loop
+//           }
+//         }
+//       }
        // Calculate any overshoot of the desired position
        // _EncoderTicks should be a negative value
-       counts = _EncoderTicks - countVal;
+//       counts = _EncoderTicks - countVal;
        
-       Serial.print("Encoder Ticks: ");
-       Serial.print(_EncoderTicks);
-       Serial.print(", Target: ");
-       Serial.println(countVal);
-       
+//       Serial.print("Encoder Ticks: ");
+//       Serial.print(_EncoderTicks);
+//       Serial.print(", Target: ");
+//       Serial.println(countVal);
+//       
        // Switch sign of counts
        counts = counts * -1;
        // Add the overshoot to 'results' to save the actual currPos
@@ -437,14 +422,14 @@ void loop(void)
 //  motor encoder triggers (including rotation direction).
 //  Interrupt service routine should trigger each time
 //  digital pin 2 (interrupt 0) get a RISING signal.
-void HandleInterruptA()
-{
-  //Test transition of pin B, we already know pin A just went high
-  _EncoderBSet = digitalReadFast(c_EncoderPinB); // read pin B
-
-#ifdef EncoderIsReversed
-    _EncoderTicks += _EncoderBSet ? -1 : +1;
-#else
-  _EncoderTicks -= _EncoderBSet ? -1 : +1;    
-#endif
-}
+//void HandleInterruptA()
+//{
+//  //Test transition of pin B, we already know pin A just went high
+//  _EncoderBSet = digitalReadFast(c_EncoderPinB); // read pin B
+//
+//#ifdef EncoderIsReversed
+//    _EncoderTicks += _EncoderBSet ? -1 : +1;
+//#else
+//  _EncoderTicks -= _EncoderBSet ? -1 : +1;    
+//#endif
+//}
