@@ -1,5 +1,5 @@
 /* Tide_controller_v1.4
-  TODO: Implement stepper motor control
+
   TODO: implement limit switches
   TODO: Move integer harmonic constants into PROGMEM
   
@@ -159,36 +159,28 @@ int currMinute; // Keep track of current minute value in main loop
 //volatile long _EncoderTicks = 0;
 //-----------------------------------------------
 
-//long Total = 0;  // Total turns during this actuation
-//float TotalTurns = 0; // Total turns overall (i.e. current position)
+
 float currPos = 6.0; // Current position, based on limit switch height. Units = ft.
 float results = currPos;
 
-// Conversion factor, feet per encoder count
+// Conversion factor, feet per motor step
 // Divide desired travel (in ft.) by this value
-// to calculate the number of encoder counts that
+// to calculate the number of steps that
 // must occur.
-const float countConv = 0.00036979;   // Value for 1.130" diam spool
+const float stepConv = 0.000184895;   // Value for 1.130" diam spool
 /*  1.13" diam spool x pi = 3.55" per output shaft revolution
-    3.55" per rev / 12" = 0.2958333 ft per output shaft revolution
-    I use a 50:1 gear reduction Pololu motor, so 1 output shaft rev
-    takes 50 motor armature revolutions. If the encoder interrupt only
-    triggers (counts) on rising signals on line A, there will be 16 
-    triggers per motor armature revolution or (16 x 50 = 800) counts 
-    per output shaft revolution.
-    0.295833 ft per rev / 800 counts per rev = 0.00036979 ft per count
-    16 counts per revolution = 360/16 = 22.5° resolution on motor 
-    armature position, or 0.45° resolution on output shaft position.
+    3.55" per rev / 12" = 0.2958333 ft per output shaft revolution    
+    0.295833 ft per rev / 1600 steps per rev = 0.000184895 ft per step
+    We're using feet here because the tide prediction routine outputs
+    tide height in units of feet. 
 */
 
 float heightDiff;    // Float variable to hold height difference, in ft.                                    
-long countVal = 0;     // Store the number of encoder counts needed
+long stepVal = 0;     // Store the number of steps needed
                                 // to achieve the new height
-long counts = 0;       // Store the number of encoder counts that have
+long counts = 0;       // Store the number of steps that have
                                 // gone by so far.
 
-//const int motorSpeed = 40; // Specify motor rotation speed (0 to 127) for
-//                           // qik2s9v1 motor controller
 //---------------------------------------------------------------------------
 
 
@@ -241,13 +233,6 @@ void setup(void)
     Serial.println(now.second());
   }
   delay(2000);
-  
-  // Initialize qik 2s9v1 serial motor controller
-  // The value in parentheses is the serial comm speed
-  // for the 2s9v1 controller. 38400 is the maximum.
-//  qik.init(38400);
-
-  
   // TODO: Create limit switch routine for initializing tide height value
   //       after a restart. 
   // TODO: Have user select tide height limits outside of which the motor
@@ -303,10 +288,10 @@ void loop(void)
      // new tide height. Value may be positive or negative depending on
      // direction of the tide. 
      heightDiff = currPos - results;       // Units of feet.
-     // Convert heightDiff into number of encoder counts that must pass
+     // Convert heightDiff into number of steps that must pass
      // to achieve the new height. The result is cast as an unsigned 
      // long integer.
-     countVal = (long)(heightDiff / countConv);
+     stepVal = (long)(heightDiff / stepConv);
      
      
     //********************************
@@ -337,104 +322,44 @@ void loop(void)
     }
      Serial.print("Height diff: ");
      Serial.println(heightDiff);
-     Serial.print("countVal calc: ");
-     Serial.println(countVal);
+     Serial.print("stepVal calc: ");
+     Serial.println(stepVal);
      Serial.print("Target height: ");
      Serial.println(results);
      //*********************************
-     
-//     _EncoderTicks = 0;  // Reset _EncoderTicks value before moving motor
+
      // ************** Lower drain height to lower tide level ***********
      // TODO: check if drain is above or below physical height limits and
      // skip this section if so. 
      if (heightDiff > 0) // Positive value means drain is higher than target value
      {
-       Serial.println("Turning motor forward to lower drain");
-//       counts = 0;
-//       qik.setM0Speed(20);  // turn motor on in forward direction
+       Serial.println("Turning motor to lower drain");
+       // Set motor direction
+       digitalWrite(stepperDir, HIGH);
+       // Run motor the desired number of steps
+       for (int steps = 0; steps < stepVal; steps++) {
+         digitalWrite(stepperStep, HIGH);
+         delayMicroseconds(100);
+         digitalWrite(stepperStep, LOW);
+       }
+       currPos = results;  // Update current position (units of feet).
+     } 
 
-       /*  The nested while loops here are necessary to compensate for a weird
-           condition where the inner while loop will occasionally quit before
-           _EncoderTicks actually hits the target value. If that happens, the 
-           outer while loop runs again to finish the last few missing turns.
-      */
-//       while(_EncoderTicks <= countVal) {
-//         //  Turn motor 0 on forward
-//         qik.setM0Speed(motorSpeed);
-//         while (1) {
-//           if (_EncoderTicks >= countVal) {
-//             qik.setM0Speed(0);  // shut off motor
-//             break;  // break out of while loop
-//           }
-//         }
-//       }
-//       Serial.print("Encoder Ticks: ");
-//       Serial.print(_EncoderTicks);
-//       Serial.print(", Target: ");
-//       Serial.println(countVal);
-//       
-       // Calculate any overshoot of the desired position
-//       counts = _EncoderTicks - countVal;
-       // Subtract the overshoot to 'results' to save the actual currPos
-//       currPos = results - (counts * countConv);
-       
-//       while (counts < countVal) {
-//         counts = counts + encoder.getCountsAndResetM1();
-//       }
-//       qik.setM0Speed(0);  // Turn motor off
-//       currPos = results;  // Update current position (units of feet).
-     }
      // **************** Raise drain height to raise tide level ************
      else if (heightDiff < 0) // Negative value means drain is lower than target value
      {
-       Serial.println("Turning motor reverse to raise drain");
-//       countVal = countVal * -1;  // Switch countVal sign
-//       while(_EncoderTicks > countVal) {
-//         //  Turn motor 0 on reverse (reverse should be negative value)
-//         qik.setM0Speed((motorSpeed * -1));
-//         while (1) {
-//           if (_EncoderTicks <= countVal) {
-//             qik.setM0Speed(0);  // shut off motor
-//             break;  // break out of while loop
-//           }
-//         }
-//       }
-       // Calculate any overshoot of the desired position
-       // _EncoderTicks should be a negative value
-//       counts = _EncoderTicks - countVal;
-       
-//       Serial.print("Encoder Ticks: ");
-//       Serial.print(_EncoderTicks);
-//       Serial.print(", Target: ");
-//       Serial.println(countVal);
-//       
-       // Switch sign of counts
-       counts = counts * -1;
-       // Add the overshoot to 'results' to save the actual currPos
-       currPos = results + (counts * countConv);
-       
-     }  // end of else if statement
-     Serial.print("Current Position: ");
-     Serial.println(currPos);
-     
-//       countVal = countVal * -1; // Change countVal direction
-//       counts = 0;
-//       qik.setM0Speed(-40);  // turn motor on in reverse direction
-//       while (counts > countVal) {
-//         counts = counts + encoder.getCountsAndResetM1();
-//       }
-//       qik.setM0Speed(0);  // turn motor off
-//       currPos = results;  // Update current position (units of feet).
-//     }
-      
-//    Serial.print("Tide: ");
-//    Serial.print(results, 3);
-//    Serial.println(" ft.");
-//
-//    Serial.print("Counts to turn: ");
-//    Serial.print(countVal);
-    // end of debugging stuff
-    //********************************   
+       Serial.println("Turning motor to raise drain");
+       // Set motor direction in reverse
+       digitalWrite(stepperDir, LOW);
+       // Run motor the desired number of steps
+       for (int steps = 0; steps < stepVal; steps++) {
+         digitalWrite(stepperStep, HIGH);
+         delayMicroseconds(100);
+         digitalWrite(stepperStep, LOW);
+       }
+       currPos = results;  // Update current position (units of feet).
+     }
+
   }    // end of if (now.minute() != currMinute) statement
 
  // TODO: include limit switch checking routines
