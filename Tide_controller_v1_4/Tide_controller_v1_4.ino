@@ -54,10 +54,10 @@
     takes two input wires: a direction wire and step wire. The direction is
     set by pulling the direction pin high or low. A single step is taken by 
     pulling the step pin high. 
-    By default, when you leave MS1 and MS2 high on the Big Easy Driver, the 
-    driver defaults to 1/8 microstep mode. If a full step is 1.8° (200 steps
-    per revolution), then microstep mode moves 1/8 of that, 
-    (1.8° * 1/8 = 0.225° per step), or 1600 microsteps per full revolution 
+    By default, when you leave MS1, MS2, and MS3 high on the Big Easy Driver, the 
+    driver defaults to 1/16 microstep mode. If a full step is 1.8° (200 steps
+    per revolution), then microstep mode moves 1/16 of that, 
+    (1.8° * 1/16 = 0.1125° per step), or 3200 microsteps per full revolution 
     of the motor. 
    
 */
@@ -167,10 +167,10 @@ float results = currPos;
 // Divide desired travel (in ft.) by this value
 // to calculate the number of steps that
 // must occur.
-const float stepConv = 0.000184895;   // Value for 1.130" diam spool
-/*  1.13" diam spool x pi = 3.55" per output shaft revolution
-    3.55" per rev / 12" = 0.2958333 ft per output shaft revolution    
-    0.295833 ft per rev / 1600 steps per rev = 0.000184895 ft per step
+const float stepConv = 0.0000981747;   // Value for 1.20" diam spool
+/*  1.2" diam spool x pi = 3.77" per output shaft revolution
+    3.77" per rev / 12" = 0.31415 ft per output shaft revolution    
+    0.31415 ft per rev / 3200 steps per rev = 0.0000981747 ft per step
     We're using feet here because the tide prediction routine outputs
     tide height in units of feet. 
 */
@@ -292,6 +292,7 @@ void loop(void)
      // to achieve the new height. The result is cast as an unsigned 
      // long integer.
      stepVal = (long)(heightDiff / stepConv);
+     stepVal = abs(stepVal);  // remove negative sign if present
      
      
     //********************************
@@ -335,11 +336,11 @@ void loop(void)
      {
        Serial.println("Turning motor to lower drain");
        // Set motor direction
-       digitalWrite(stepperDir, HIGH);
+       digitalWrite(stepperDir, LOW);
        // Run motor the desired number of steps
        for (int steps = 0; steps < stepVal; steps++) {
          digitalWrite(stepperStep, HIGH);
-         delayMicroseconds(100);
+         delayMicroseconds(500);
          digitalWrite(stepperStep, LOW);
        }
        currPos = results;  // Update current position (units of feet).
@@ -350,11 +351,11 @@ void loop(void)
      {
        Serial.println("Turning motor to raise drain");
        // Set motor direction in reverse
-       digitalWrite(stepperDir, LOW);
+       digitalWrite(stepperDir, HIGH);
        // Run motor the desired number of steps
        for (int steps = 0; steps < stepVal; steps++) {
          digitalWrite(stepperStep, HIGH);
-         delayMicroseconds(100);
+         delayMicroseconds(500);
          digitalWrite(stepperStep, LOW);
        }
        currPos = results;  // Update current position (units of feet).
