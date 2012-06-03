@@ -22,7 +22,7 @@
   This program is designed to calculate the current tide height
   and control a motor that changes the water level in a tank.
 
-  Written under v1.0 of the Arduino IDE.
+  Written under v1.0.1 of the Arduino IDE.
   
   The harmonics constants for the tide prediction are taken from 
   the XTide harmonics file. The original harmonics.tcd file is 
