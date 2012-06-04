@@ -1,5 +1,10 @@
 /* Tide_controller_v1.5
   TODO: Move integer harmonic constants into PROGMEM
+  This version is set up to work on a lead-screw driven rack that has
+  a limited travel range. There should be a limit switch at each end 
+  of the rack's travel, and the distance between the values for 
+  upperPos and lowerPos must be equal to the distance between those 
+  limit switches. 
   
   Copyright (C) 2012 Luke Miller
   
@@ -31,6 +36,8 @@
   or implied for these tide predictions. Hell, the chances are 
   pretty good that the tide predictions generated here are 
   completely wrong.
+  
+
 */
 //********************************************************************************
 
@@ -50,7 +57,7 @@ const int adjustGMT = 8;     // Time zone adjustment to get time in GMT. Make su
 
 int secs = 0; // Keep track of previous seconds value in main loop
 int currMinute; // Keep track of current minute value in main loop
-//------------------------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------------
 /*  Stepper motor notes
     This uses a Big Easy Driver to control a unipolar stepper motor. This
     takes two input wires: a direction wire and step wire. The direction is
@@ -198,9 +205,7 @@ void setup(void)
   currMinute = now.minute(); // Store current minute value
   printTime(now);  // Call printTime function to print date/time to serial
   delay(4000);
-  // TODO: Create limit switch routine for initializing tide height value
-  //       after a restart. 
-  
+
   //************************************
   // Spin motor to position slide at the home position (at upperLimitSwitch)
   // The while loop will continue until the upperLimitSwitch is activated 
@@ -211,7 +216,7 @@ void setup(void)
        digitalWrite(stepperDir, HIGH);
        // Move stepper a single step
        digitalWrite(stepperStep, HIGH);
-       delayMicroseconds(200);
+       delayMicroseconds(100);
        digitalWrite(stepperStep, LOW);
   }
   currPos = upperPos; // currPos should now equal upperPos
@@ -248,8 +253,8 @@ void loop(void)
     // *****************Calculate current tide height*************
     results = Datum; // initialize results variable, units of feet.
     for (int harms = 0; harms < 37; harms++) {
-      // Many of the constants are stored as unsigned integers to save space. These
-      // steps convert them back to their real values.
+      // Many of the constants are stored as unsigned integers to 
+      // save space. These steps convert them back to their real values.
       currNodefactor = Nodefactor[YearIndx][harms] / float(10000);
       currAmp = Amp[harms] / float(1000);
       currEquilarg = Equilarg[YearIndx][harms] / float(100);
@@ -260,7 +265,8 @@ void loop(void)
     // The currHours value is assumed to be in hours from the start of the
     // year, in the Greenwich Mean Time zone, not the local time zone.
     // There is no daylight savings time adjustment here.  
-      results = results + (currNodefactor * currAmp * cos( (currSpeed * currHours + currEquilarg - currKappa) * DEG_TO_RAD));
+      results = results + (currNodefactor * currAmp * 
+        cos( (currSpeed * currHours + currEquilarg - currKappa) * DEG_TO_RAD));
     }
     //******************End of Tide Height calculation*************
      
