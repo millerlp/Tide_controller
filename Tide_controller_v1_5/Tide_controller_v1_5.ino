@@ -223,6 +223,7 @@ void setup(void)
   Serial.print("Current position: ");
   Serial.print(currPos,2);
   Serial.println(" ft.");
+  delay(2000);
 }  // End of setup loop.
 
 //**************************************************************************
