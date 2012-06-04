@@ -140,8 +140,8 @@ float currNodefactor;
 float currEquilarg;
 float currKappa;
 //-----------------------------------------------------------------------------
-float upperPos = 5.5; // Upper limit, located at upperLimitSwitch. Units = ft.
-float lowerPos = 2.5; // Lower limit, located at lowerLimitSwitch. Units = ft.
+float upperPos = 5.3; // Upper limit, located at upperLimitSwitch. Units = ft.
+float lowerPos = 2.3; // Lower limit, located at lowerLimitSwitch. Units = ft.
 float currPos;  // Current position, within limit switch range.    Units = ft.
 float results;  // results holds the output from the tide calc.    Units = ft.
 // The value for upperPos is taken to be the "home" position, so when ever the
@@ -379,7 +379,7 @@ void loop(void)
     if (digitalRead(upperLimitSwitch) == LOW) {
       Serial.println("At upper limit switch, no movement");
     }
-    if (digitalRead(upperLimitSwitch) == LOW) {
+    if (digitalRead(lowerLimitSwitch) == LOW) {
       Serial.println("At lower limit switch, no movement");
     }
   }    // End of if (now.minute() != currMinute) statement
