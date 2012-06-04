@@ -266,7 +266,7 @@ void loop(void)
      // Calculate height difference between currPos and
      // new tide height. Value may be positive or negative depending on
      // direction of the tide. 
-     heightDiff = currPos - results;       // Units of feet.
+     heightDiff = results - currPos;       // Units of feet.
      // Convert heightDiff into number of steps that must pass
      // to achieve the new height. The result is cast as an unsigned 
      // long integer.
@@ -289,8 +289,8 @@ void loop(void)
      // ************** Lower drain height to lower tide level ***********
      // TODO: check if drain is above or below physical height limits and
      // skip this section if so. 
-     // Positive value means old water level is higher than target value
-     if (heightDiff > 0) 
+     // Negative value means old water level is higher than new target value
+     if (heightDiff < 0 & upperLimitSwitch == HIGH & lowerLimitSwitch == HIGH)
      {
        Serial.println("Turning motor to lower water level");
        // Set motor direction
@@ -305,7 +305,7 @@ void loop(void)
      } 
 
      // **************** Raise drain height to raise tide level ************
-     else if (heightDiff < 0) // Negative value means drain is lower than target value
+     else if (heightDiff > 0) // Positive value means drain is lower than target value
      {
        Serial.println("Turning motor to raise water level");
        // Set motor direction in reverse
