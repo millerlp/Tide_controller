@@ -140,8 +140,8 @@ float currNodefactor;
 float currEquilarg;
 float currKappa;
 //-----------------------------------------------------------------------------
-float upperPos = 6.0; // Upper limit, located at upperLimitSwitch. Units = ft.
-float lowerPos = 3.0; // Lower limit, located at lowerLimitSwitch. Units = ft.
+float upperPos = 5.5; // Upper limit, located at upperLimitSwitch. Units = ft.
+float lowerPos = 2.5; // Lower limit, located at lowerLimitSwitch. Units = ft.
 float currPos;  // Current position, within limit switch range.    Units = ft.
 float results;  // results holds the output from the tide calc.    Units = ft.
 // The value for upperPos is taken to be the "home" position, so when ever the
@@ -228,7 +228,7 @@ void setup(void)
     digitalWrite(stepperDir, HIGH);
     // Move stepper a single step
     digitalWrite(stepperStep, HIGH);
-    delayMicroseconds(50);
+    delayMicroseconds(100);
     digitalWrite(stepperStep, LOW);
   }
   currPos = upperPos; // currPos should now equal upperPos
@@ -331,6 +331,7 @@ void loop(void)
           // hitting the lower limit switch, record that as the new
           // currPos value.
           currPos = currPos - (steps * stepConv);
+          Serial.println("Hit lower limit switch");
           break;  // break out of for loop
         }
       }
@@ -361,6 +362,7 @@ void loop(void)
           // we assume that the currPos = upperPos when the
           // upperLimitSwitch is activated.
           currPos = upperPos;
+          Serial.println("Hit upper limit switch");
           break;  // break out of for loop
         }
       }
@@ -374,6 +376,12 @@ void loop(void)
     // either of the travel limits, then there should be no motor 
     // movement, and the currPos value should not be changed. 
     //*******************************************************************
+    if (digitalRead(upperLimitSwitch) == LOW) {
+      Serial.println("At upper limit switch, no movement");
+    }
+    if (digitalRead(upperLimitSwitch) == LOW) {
+      Serial.println("At lower limit switch, no movement");
+    }
   }    // End of if (now.minute() != currMinute) statement
 
   // TODO: implement return-to-home-position routine.
