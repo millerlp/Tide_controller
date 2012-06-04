@@ -1,6 +1,4 @@
 /* Tide_controller_v1.5
-
-  TODO: implement limit switches
   TODO: Move integer harmonic constants into PROGMEM
   
   Copyright (C) 2012 Luke Miller
@@ -135,18 +133,19 @@ float currNodefactor;
 float currEquilarg;
 float currKappa;
 //------------------------------------------------------------------------------------------------
-float homePos = 3.0; // Home position, located at upperLimitSwitch. Units = ft.
+float upperPos = 3.0; // Upper limit, located at upperLimitSwitch. Units = ft.
 float currPos = 3.0; // Current position, based on limit switch height. Units = ft.
+float lowerPos = 0.0; // Lower limit, located at lowerLimitSwitch. Units = ft.
 float results = currPos;
 
 // Conversion factor, feet per motor step
 // Divide desired travel (in ft.) by this value
 // to calculate the number of steps that
 // must occur.
-const float stepConv = 0.0000981747;   // Value for 1.20" diam spool
-/*  1.2" diam spool x pi = 3.77" per output shaft revolution
-    3.77" per rev / 12" = 0.31415 ft per output shaft revolution    
-    0.31415 ft per rev / 3200 steps per rev = 0.0000981747 ft per step
+const float stepConv = 0.000002604;   // Value for 10 tpi lead screw
+/*  10 tooth-per-inch lead screw = 0.1 inches per revolution
+    0.1 inches per rev / 12" = 0.008333 ft per revolution
+    0.008333 ft per rev / 3200 steps per rev = 0.000002604 ft per step
     We're using feet here because the tide prediction routine outputs
     tide height in units of feet. 
 */
@@ -158,7 +157,9 @@ long counts = 0;       // Store the number of steps that have
                                 // gone by so far.
 
 //---------------------------------------------------------------------------
-// Define the digital pin numbers for the limit switches
+// Define the digital pin numbers for the limit switches. These will be 
+// wired to one lead from a magentic reed switch. The 2nd lead from each reed 
+// switch will be wired to ground on the Arduino.
 const int lowerLimitSwitch = 10;
 const int upperLimitSwitch = 11;
 // Define digital pin number for the homeButton
@@ -212,7 +213,7 @@ void setup(void)
        delayMicroseconds(500);
        digitalWrite(stepperStep, LOW);
   }
-  currPos = homePos; // currPos should now equal homePos
+  currPos = upperPos; // currPos should now equal upperPos
   
   // TODO: Have user select tide height limits outside of which the motor
   //       won't turn any further.
@@ -286,26 +287,44 @@ void loop(void)
      Serial.println(results);
      //*********************************
 
-     // ************** Lower drain height to lower tide level ***********
+     // ************** Lower water level to new position **************
      // TODO: check if drain is above or below physical height limits and
      // skip this section if so. 
-     // Negative value means old water level is higher than new target value
-     if (heightDiff < 0 & upperLimitSwitch == HIGH & lowerLimitSwitch == HIGH)
+     
+     // If the heightDiff is negative, AND the target level is less than 
+     // the upperPos limit, AND the target level is greater than the 
+     // lowerPos limit (with a 0.01ft buffer) AND the lowerLimitSwitch 
+     // hasn't been activated, then the motor can be moved. 
+     if ( (heightDiff < 0) & (results < upperPos) & 
+       (results > (lowerPos - 0.01)) & (digitalRead(lowerLimitSwitch) == HIGH) )
      {
        Serial.println("Turning motor to lower water level");
-       // Set motor direction
-       digitalWrite(stepperDir, LOW);
+       // Set motor direction to move downward
+       digitalWrite(stepperDir, LOW);       
        // Run motor the desired number of steps
        for (int steps = 0; steps < stepVal; steps++) {
          digitalWrite(stepperStep, HIGH);
          delayMicroseconds(500);
          digitalWrite(stepperStep, LOW);
+         // check lowerLimitSwitch each step, quit if it is activated
+         if (digitalRead(lowerLimitSwitch) == LOW) {
+           currPos = lowerPos;  // set currPos at lower limit
+           break;  // break out of for loop
+         }
        }
-       currPos = results;  // Update current position (units of feet).
-     } 
-
-     // **************** Raise drain height to raise tide level ************
-     else if (heightDiff > 0) // Positive value means drain is lower than target value
+       if (digitalRead(lowerLimitSwitch) == HIGH) {
+         // If the lower limit wasn't reached, then the currPos should
+         // be equal to the new water level stored in 'results'.
+         currPos = results;
+       }       
+     }
+     // ************Raise water level to new position******************
+     // If the heightDiff is positive, AND the target level is greater 
+     // than the lowerPos limit, AND the target level is less than the 
+     // upperPos limit (plus a 0.01ft buffer), AND the upperLimitSwitch 
+     // hasn't been activated, then the motor can be moved.
+     else if ( (heightDiff > 0) & (results > lowerPos) & 
+       (results < (upperPos + 0.01)) & (digitalRead(upperLimitSwitch) == HIGH) )
      {
        Serial.println("Turning motor to raise water level");
        // Set motor direction in reverse
@@ -315,13 +334,22 @@ void loop(void)
          digitalWrite(stepperStep, HIGH);
          delayMicroseconds(500);
          digitalWrite(stepperStep, LOW);
+         // check upperLimitSwitch each step, quit if it is activated
+         if (digitalRead(upperLimitSwitch) == LOW) {
+           currPos = upperPos;
+           break;  // break out of for loop
+         }
        }
-       currPos = results;  // Update current position (units of feet).
+       if (digitalRead(upperLimitSwitch) == HIGH) {
+         // If the upper limit wasn't reached, then currPos should
+         // be equal to the new water level stored in 'results'.
+         currPos = results;
+       }     
      }
 
   }    // end of if (now.minute() != currMinute) statement
 
- // TODO: include limit switch checking routines
+ // TODO: implement return-to-home-position routine.
  
 } // end of main loop
 
