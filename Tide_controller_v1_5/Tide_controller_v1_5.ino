@@ -142,8 +142,18 @@ float currKappa;
 //-----------------------------------------------------------------------------
 float upperPos = 6.0; // Upper limit, located at upperLimitSwitch. Units = ft.
 float lowerPos = 3.0; // Lower limit, located at lowerLimitSwitch. Units = ft.
-float currPos;  // Current position, based on limit switch height. Units = ft.
+float currPos;  // Current position, within limit switch range.    Units = ft.
 float results;  // results holds the output from the tide calc.    Units = ft.
+// The value for upperPos is taken to be the "home" position, so when ever the
+// upperLimitSwitch is activated, the motor is at exactly the value of upperPos.
+// In contrast, the value of lowerPos can be less precise, it is just close to 
+// the position of where the lowerLimitSwitch will activate, and is used as a 
+// backup check to make sure the motor doesn't exceed its travel limits. The 
+// lowerLimitSwitch is the main determinant of when the motor stops downward
+// travel. This is mainly to accomodate the use of magnetic switches where the
+// precise position of activation is hard to determine without lots of trial 
+// and error.
+
 //-----------------------------------------------------------------------------
 // Conversion factor, feet per motor step
 // Divide desired travel (in ft.) by this value
@@ -298,26 +308,28 @@ void loop(void)
      //*********************************
 
      // ************** Lower water level to new position **************
-     // TODO: check if drain is above or below physical height limits and
-     // skip this section if so. 
+
      
      // If the heightDiff is negative, AND the target level is less than 
      // the upperPos limit, AND the target level is greater than the 
-     // lowerPos limit (with a 0.025ft buffer) AND the lowerLimitSwitch 
-     // hasn't been activated, then the motor can be moved. 
+     // lowerPos limit AND the lowerLimitSwitch 
+     // hasn't been activated, then the motor can be moved downward. 
      if ( (heightDiff < 0) & (results < upperPos) & 
-       (results > (lowerPos - 0.025)) & (digitalRead(lowerLimitSwitch) == HIGH) )
+       (results > lowerPos) & (digitalRead(lowerLimitSwitch) == HIGH) )
      {
        // Set motor direction to move downward
        digitalWrite(stepperDir, LOW);       
        // Run motor the desired number of steps
        for (int steps = 0; steps < stepVal; steps++) {
          digitalWrite(stepperStep, HIGH);
-         delayMicroseconds(200);
+         delayMicroseconds(100);
          digitalWrite(stepperStep, LOW);
          // check lowerLimitSwitch each step, quit if it is activated
          if (digitalRead(lowerLimitSwitch) == LOW) {
-           currPos = lowerPos;  // set currPos at lower limit
+           // Calculate how far the motor managed to turn before
+           // hitting the lower limit switch, record that as the new
+           // currPos value.
+           currPos = currPos - (steps * stepConv);
            break;  // break out of for loop
          }
        }
@@ -340,10 +352,13 @@ void loop(void)
        // Run motor the desired number of steps
        for (int steps = 0; steps < stepVal; steps++) {
          digitalWrite(stepperStep, HIGH);
-         delayMicroseconds(200);
+         delayMicroseconds(100);
          digitalWrite(stepperStep, LOW);
          // check upperLimitSwitch each step, quit if it is activated
          if (digitalRead(upperLimitSwitch) == LOW) {
+           // Since the upper limit switch is the "home" position
+           // we assume that the currPos = upperPos when the
+           // upperLimitSwitch is activated.
            currPos = upperPos;
            break;  // break out of for loop
          }
@@ -355,11 +370,11 @@ void loop(void)
        }     
      }
 
-  }    // end of if (now.minute() != currMinute) statement
+  }    // End of if (now.minute() != currMinute) statement
 
  // TODO: implement return-to-home-position routine.
  
-} // end of main loop
+} // End of main loop
 
 
 //******************************************************
