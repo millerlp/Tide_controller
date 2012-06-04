@@ -132,12 +132,12 @@ float currSpeed;
 float currNodefactor;
 float currEquilarg;
 float currKappa;
-//------------------------------------------------------------------------------------------------
-float upperPos = 3.0; // Upper limit, located at upperLimitSwitch. Units = ft.
-float currPos = 3.0; // Current position, based on limit switch height. Units = ft.
-float lowerPos = 0.0; // Lower limit, located at lowerLimitSwitch. Units = ft.
-float results = currPos;
-
+//-----------------------------------------------------------------------------
+float upperPos = 6.0; // Upper limit, located at upperLimitSwitch. Units = ft.
+float lowerPos = 3.0; // Lower limit, located at lowerLimitSwitch. Units = ft.
+float currPos;  // Current position, based on limit switch height. Units = ft.
+float results;  // results holds the output from the tide calc.    Units = ft.
+//-----------------------------------------------------------------------------
 // Conversion factor, feet per motor step
 // Divide desired travel (in ft.) by this value
 // to calculate the number of steps that
@@ -205,20 +205,20 @@ void setup(void)
   // Spin motor to position slide at the home position (at upperLimitSwitch)
   // The while loop will continue until the upperLimitSwitch is activated 
   // (i.e. driven LOW). 
-  while (upperLimitSwitch != LOW) {
-       // Set motor direction
-       digitalWrite(stepperDir, LOW);
+  Serial.println("Returning to upper limit");
+  while (digitalRead(upperLimitSwitch) != LOW) {
+       // Set motor direction, HIGH = counterclockwise
+       digitalWrite(stepperDir, HIGH);
        // Move stepper a single step
        digitalWrite(stepperStep, HIGH);
-       delayMicroseconds(500);
+       delayMicroseconds(200);
        digitalWrite(stepperStep, LOW);
   }
   currPos = upperPos; // currPos should now equal upperPos
-  
-  // TODO: Have user select tide height limits outside of which the motor
-  //       won't turn any further.
-
-}
+  Serial.print("Current position: ");
+  Serial.print(currPos,2);
+  Serial.println(" ft.");
+}  // End of setup loop.
 
 //**************************************************************************
 // Welcome to the Main loop
@@ -244,7 +244,7 @@ void loop(void)
     
     Serial.print("Previous tide ht: ");
     Serial.print(results);
-    Serial.println(" ft.:");   
+    Serial.println(" ft.");   
     // *****************Calculate current tide height*************
     results = Datum; // initialize results variable, units of feet.
     for (int harms = 0; harms < 37; harms++) {
@@ -280,11 +280,14 @@ void loop(void)
     // Print current time to serial monitor
      printTime(now);
      Serial.print("Height diff: ");
-     Serial.println(heightDiff);
+     Serial.print(heightDiff, 3);
+     Serial.println(" ft.");
      Serial.print("stepVal calc: ");
      Serial.println(stepVal);
      Serial.print("Target height: ");
-     Serial.println(results);
+     Serial.print(results, 3);
+     Serial.println(" ft.");
+     Serial.println(); // blank line
      //*********************************
 
      // ************** Lower water level to new position **************
@@ -298,13 +301,12 @@ void loop(void)
      if ( (heightDiff < 0) & (results < upperPos) & 
        (results > (lowerPos - 0.01)) & (digitalRead(lowerLimitSwitch) == HIGH) )
      {
-       Serial.println("Turning motor to lower water level");
        // Set motor direction to move downward
        digitalWrite(stepperDir, LOW);       
        // Run motor the desired number of steps
        for (int steps = 0; steps < stepVal; steps++) {
          digitalWrite(stepperStep, HIGH);
-         delayMicroseconds(500);
+         delayMicroseconds(200);
          digitalWrite(stepperStep, LOW);
          // check lowerLimitSwitch each step, quit if it is activated
          if (digitalRead(lowerLimitSwitch) == LOW) {
@@ -326,13 +328,12 @@ void loop(void)
      else if ( (heightDiff > 0) & (results > lowerPos) & 
        (results < (upperPos + 0.01)) & (digitalRead(upperLimitSwitch) == HIGH) )
      {
-       Serial.println("Turning motor to raise water level");
        // Set motor direction in reverse
        digitalWrite(stepperDir, HIGH);
        // Run motor the desired number of steps
        for (int steps = 0; steps < stepVal; steps++) {
          digitalWrite(stepperStep, HIGH);
-         delayMicroseconds(500);
+         delayMicroseconds(200);
          digitalWrite(stepperStep, LOW);
          // check upperLimitSwitch each step, quit if it is activated
          if (digitalRead(upperLimitSwitch) == LOW) {
