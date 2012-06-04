@@ -135,8 +135,8 @@ float currNodefactor;
 float currEquilarg;
 float currKappa;
 //------------------------------------------------------------------------------------------------
-
-float currPos = 6.0; // Current position, based on limit switch height. Units = ft.
+float homePos = 3.0; // Home position, located at upperLimitSwitch. Units = ft.
+float currPos = 3.0; // Current position, based on limit switch height. Units = ft.
 float results = currPos;
 
 // Conversion factor, feet per motor step
@@ -158,7 +158,12 @@ long counts = 0;       // Store the number of steps that have
                                 // gone by so far.
 
 //---------------------------------------------------------------------------
-
+// Define the digital pin numbers for the limit switches
+const int lowerLimitSwitch = 10;
+const int upperLimitSwitch = 11;
+// Define digital pin number for the homeButton
+// Pressing this button will run the motor until it hits the upper limit switch
+const int homeButton = 12; 
 
 //**************************************************************************
 // Welcome to the setup loop
@@ -167,18 +172,23 @@ void setup(void)
   Wire.begin();
   RTC.begin();
   //--------------------------------------------------
-  //Quadrature encoders
-//  pinMode(c_EncoderPinA, INPUT);  // sets encoder pin A as input
-//  digitalWrite(c_EncoderPinA, LOW);  // turn on pullup resistor
-//  pinMode(c_EncoderPinB, INPUT);  // sets encoder pin B as input
-//  digitalWrite(c_EncoderPinB, LOW); // turn on pullup resistor
-//  attachInterrupt(c_EncoderPinInterrupt, HandleInterruptA, RISING);
-  //--------------------------------------------------
   pinMode(stepperDir, OUTPUT);   // direction pin for Big Easy Driver
   pinMode(stepperStep, OUTPUT);  // step pin for Big Easy driver. One step per rise.
   digitalWrite(stepperDir, LOW);
   digitalWrite(stepperStep, LOW);
   
+  // Set up switches and input button as inputs. 
+  pinMode(lowerLimitSwitch, INPUT);
+  digitalWrite(lowerLimitSwitch, HIGH);  // turn on internal pull-up resistor
+  pinMode(upperLimitSwitch, INPUT);
+  digitalWrite(upperLimitSwitch, HIGH);  // turn on internal pull-up resistor
+  pinMode(homeButton, INPUT);
+  digitalWrite(homeButton, HIGH);        // turn on internal pull-up resistor
+  // When using the internal pull-up resistors for the switches above, the
+  // default state for the input pin is HIGH (+5V), and goes LOW (0V) when
+  // the switch/button connects to ground. Thus, a LOW value indicates that the
+  // button or switch has been activated. 
+
   
   // For debugging output to serial monitor
   Serial.begin(115200);
@@ -186,9 +196,24 @@ void setup(void)
   DateTime now = RTC.now();
   currMinute = now.minute(); // Store current minute value
   printTime(now);  // Call printTime function to print date/time to serial
-  delay(2000);
+  delay(4000);
   // TODO: Create limit switch routine for initializing tide height value
   //       after a restart. 
+  
+  //************************************
+  // Spin motor to position slide at the home position (at upperLimitSwitch)
+  // The while loop will continue until the upperLimitSwitch is activated 
+  // (i.e. driven LOW). 
+  while (upperLimitSwitch != LOW) {
+       // Set motor direction
+       digitalWrite(stepperDir, LOW);
+       // Move stepper a single step
+       digitalWrite(stepperStep, HIGH);
+       delayMicroseconds(500);
+       digitalWrite(stepperStep, LOW);
+  }
+  currPos = homePos; // currPos should now equal homePos
+  
   // TODO: Have user select tide height limits outside of which the motor
   //       won't turn any further.
 
@@ -264,9 +289,10 @@ void loop(void)
      // ************** Lower drain height to lower tide level ***********
      // TODO: check if drain is above or below physical height limits and
      // skip this section if so. 
-     if (heightDiff > 0) // Positive value means drain is higher than target value
+     // Positive value means old water level is higher than target value
+     if (heightDiff > 0) 
      {
-       Serial.println("Turning motor to lower drain");
+       Serial.println("Turning motor to lower water level");
        // Set motor direction
        digitalWrite(stepperDir, LOW);
        // Run motor the desired number of steps
@@ -281,7 +307,7 @@ void loop(void)
      // **************** Raise drain height to raise tide level ************
      else if (heightDiff < 0) // Negative value means drain is lower than target value
      {
-       Serial.println("Turning motor to raise drain");
+       Serial.println("Turning motor to raise water level");
        // Set motor direction in reverse
        digitalWrite(stepperDir, HIGH);
        // Run motor the desired number of steps
