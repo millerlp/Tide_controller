@@ -378,9 +378,11 @@ void loop(void)
     //*******************************************************************
     if (digitalRead(upperLimitSwitch) == LOW) {
       Serial.println("At upper limit switch, no movement");
+      Serial.println();
     }
     if (digitalRead(lowerLimitSwitch) == LOW) {
       Serial.println("At lower limit switch, no movement");
+      Serial.println();
     }
   }    // End of if (now.minute() != currMinute) statement
 
