@@ -1,4 +1,9 @@
 /* Tide_controller_v1.3 
+
+  This version is designed to work with a Pololu 37D geared motor
+  and encoder, along with a Pololu 2s9v1 serial motor controller. 
+  This code still misses encoder counts though, so it is not ideal. 
+  
   TODO: implement limit switches
   TODO: switch to PWM motor control
   TODO: Move integer harmonic constants into PROGMEM
