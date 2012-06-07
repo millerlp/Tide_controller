@@ -1,4 +1,10 @@
 /* Tide_controller_v1.2 
+
+    This version is designed to work with a Pololu 37D geared motor and
+  encoder, along with a Pololu 2s9v1 serial motor controller. The
+  encoder counting constantly misses counts though, so precise motor
+  positioning isn't possible.
+  
   TODO: switch to external interrupts instead of pin-change interrupts
   TODO: implement limit switches
   TODO: switch to PWM motor control
