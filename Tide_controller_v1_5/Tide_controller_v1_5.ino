@@ -276,7 +276,7 @@ void loop(void)
     Serial.println();
     printTime(now);
     Serial.print("Previous tide ht: ");
-    Serial.print(results);
+    Serial.print(results,3);
     Serial.println(" ft.");   
     // *****************Calculate current tide height*************
     results = Datum; // initialize results variable, units of feet.
