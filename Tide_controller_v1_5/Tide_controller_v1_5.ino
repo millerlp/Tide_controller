@@ -4,7 +4,8 @@
  a limited travel range. There should be a limit switch at each end 
  of the rack's travel, and the distance between the values for 
  upperPos and lowerPos must be equal to the distance between those 
- limit switches. 
+ limit switches. Tidal harmonic constituents have been moved to
+ program memory, allowing more years of data to be stored.
  
  Copyright (C) 2012 Luke Miller
  
