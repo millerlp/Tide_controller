@@ -1,5 +1,12 @@
 /* Tide_controller_v1.4
 
+  This version is the first implementation of a stepper motor instead of
+  the Pololu geared motor w/ encoder that I was previously using. 
+  This version could wind and unwind cable from a spool, but doesn't have
+  any travel limit switches, so it is inappropriate for use on a lead-screw
+  setup. It also can only hold 4 years of tide harmonic constituents, since
+  the move to progmem didn't occur until v1.5.
+  
   TODO: implement limit switches
   TODO: Move integer harmonic constants into PROGMEM
   
