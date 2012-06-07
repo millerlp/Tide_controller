@@ -254,7 +254,7 @@ void loop(void)
     currMinute = now.minute();                   // update currMinute
 
       // Calculate difference between current year and starting year.
-    YearIndx = startYear - now.year();
+    YearIndx = now.year() - startYear;
     // Calculate hours since start of current year. Hours = seconds / 3600
     currHours = (now.unixtime() - startSecs[YearIndx]) / float(3600);
     // Shift currHours to Greenwich Mean Time
