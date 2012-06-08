@@ -47,9 +47,9 @@
 #include <avr/pgmspace.h>    // Needed to store values in PROGMEM
 // Header files for talking to real time clock
 #include <Wire.h>
-#include <RTClib.h>
+#include <RTClib.h>  // Available at https://github.com/adafruit/RTClib
 // Real Time Clock setup
-RTC_DS1307 RTC;
+RTC_DS1307 RTC;      // This line remains the same even if you use the DS3231 chip
 unsigned int YearIndx = 0;    // Used to index rows in the Equilarg/Nodefactor arrays
 float currHours = 0;          // Elapsed hours since start of year
 const int adjustGMT = 8;     // Time zone adjustment to get time in GMT. Make sure this is
@@ -57,7 +57,6 @@ const int adjustGMT = 8;     // Time zone adjustment to get time in GMT. Make su
 // No daylight savings time adjustments should be made. 
 // 8 = Pacific Standard Time (America/Los_Angeles)
 
-int secs = 0; // Keep track of previous seconds value in main loop
 int currMinute; // Keep track of current minute value in main loop
 //---------------------------------------------------------------------------------------
 /*  Stepper motor notes
