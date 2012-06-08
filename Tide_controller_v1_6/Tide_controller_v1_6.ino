@@ -46,7 +46,7 @@
 #include <avr/pgmspace.h>    // Needed to store values in PROGMEM
 // Header files for talking to real time clock
 #include <Wire.h>
-#include <RTClib.h>
+#include <RTClib.h>  // Available from https://github.com/adafruit/RTClib
 // Real Time Clock setup
 RTC_DS1307 RTC;
 unsigned int YearIndx = 0;    // Used to index rows in the Equilarg/Nodefactor arrays

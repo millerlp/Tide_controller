@@ -64,7 +64,7 @@ const int stepperStep = 9; // define stepper step pin. Connect to
 //*******************************
 // Header files for talking to real time clock
 #include <Wire.h>
-#include <RTClib.h>
+#include <RTClib.h>  // Available from https://github.com/adafruit/RTClib
 //*******************************
 //----------------------------------------------------------------------------------
 /* Initialize harmonic constituent arrays. These each hold 37 values for
