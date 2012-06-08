@@ -1,11 +1,12 @@
-/* Tide_controller_v1.5
+/* Tide_controller_v1.6
   Copyright (C) 2012 Luke Miller
  This version is set up to work on a lead-screw driven rack that has
  a limited travel range. There should be a limit switch at each end 
  of the rack's travel, and the distance between the values for 
  upperPos and lowerPos must be equal to the distance between those 
- limit switches. Tidal harmonic constituents have been moved to
- program memory, allowing more years of data to be stored.
+ limit switches. 
+ 
+ Copyright (C) 2012 Luke Miller
  
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -45,12 +46,9 @@
 #include <avr/pgmspace.h>    // Needed to store values in PROGMEM
 // Header files for talking to real time clock
 #include <Wire.h>
-#include <RTClib.h>  // Available at https://github.com/adafruit/RTClib
+#include <RTClib.h>
 // Real Time Clock setup
-// It is assumed that the SDA data line for the real time clock is attached to 
-// Arduino analog pin 4, and SCL clock line is attached to analog pin 5, according
-// to the Wire library.
-RTC_DS1307 RTC;      // This line remains the same even if you use the DS3231 chip
+RTC_DS1307 RTC;
 unsigned int YearIndx = 0;    // Used to index rows in the Equilarg/Nodefactor arrays
 float currHours = 0;          // Elapsed hours since start of year
 const int adjustGMT = 8;     // Time zone adjustment to get time in GMT. Make sure this is
@@ -58,6 +56,7 @@ const int adjustGMT = 8;     // Time zone adjustment to get time in GMT. Make su
 // No daylight savings time adjustments should be made. 
 // 8 = Pacific Standard Time (America/Los_Angeles)
 
+int secs = 0; // Keep track of previous seconds value in main loop
 int currMinute; // Keep track of current minute value in main loop
 //---------------------------------------------------------------------------------------
 /*  Stepper motor notes
@@ -79,25 +78,21 @@ const int stepperStep = 9; // define stepper step pin. Connect to
 
 //*******************************
 
-//*******************************
 //----------------------------------------------------------------------------------
-/* Initialize harmonic constant arrays. These each hold 37 values for
-   the tide site that was extracted using the R scripts 
-   'tide_harmonics_parse.R' and 'tide_extract_1site_harmonics_progmem.R'. The 2nd
-   script outputs a text file that contains code that can be copied and pasted
-   into the section below. 
+/* Initialize harmonic constituent arrays. These each hold 37 values for
+   the tide site that was extracted using the R scripts:
+   tide_harmonics_parse.R and tide_site_extract_harmonics.R 
    If you wish to make predictions for a different site, it will be necessary to
-   replace the Amp and Kappa values with values for your site. Either use the R
-   scripts to get data for a new site, or get the new site values from NOAA.
+   replace the Amp and Kappa values with values for your site. 
    These are available from NOAA's http://tidesandcurrent.noaa.gov site.
    Kappa here is referred to as "Phase" on NOAA's site. The order of the
-   constants is shown below in the names. Unfortunately this does not match
+   constituents is shown below in the names. Unfortunately this does not match
    NOAA's order, so you will have to rearrange NOAA's values if you want to 
-   put new site values in here.
+   put new site values in here by hand.
    The Speed, Equilarg and Nodefactor arrays can all stay the same for any 
    site. 
-   
 */
+
 //-----------------------------------------------------
 // Begin pasted section from R script "tide_extract_1site_harmonics_progmem.R"
 // Selected station:  Monterey, Monterey Harbor, California 
@@ -106,7 +101,7 @@ const int stepperStep = 9; // define stepper step pin. Connect to
 // found for NOAA tide reference stations on the tidesandcurrents.noaa.gov
 //  site under the datum page for each station.
 const float Datum = 2.8281 ; // units in feet
-// Harmonic constant names: J1, K1, K2, L2, M1, M2, M3, M4, M6, M8, N2, 2N2, O1, OO1, P1, Q1, 2Q1, R2, S1, S2, S4, S6, T2, LDA2, MU2, NU2, RHO1, MK3, 2MK3, MN4, MS4, 2SM2, MF, MSF, MM, SA, SSA
+// Harmonic constituent names: J1, K1, K2, L2, M1, M2, M3, M4, M6, M8, N2, 2N2, O1, OO1, P1, Q1, 2Q1, R2, S1, S2, S4, S6, T2, LDA2, MU2, NU2, RHO1, MK3, 2MK3, MN4, MS4, 2SM2, MF, MSF, MM, SA, SSA
 // These names match the NOAA names, except LDA2 here is LAM2 on NOAA's site
 typedef float PROGMEM prog_float_t; // Need to define this type before use
 PROGMEM prog_float_t Amp[] = {0.071,1.199,0.121,0.023,0.038,1.616,0,0,0,0,0.368,0.044,0.753,0.036,0.374,0.134,0.016,0.003,0.033,0.428,0,0,0.022,0.011,0.041,0.072,0.026,0,0,0,0,0,0,0,0,0.157,0.09};
@@ -199,7 +194,6 @@ const int lowerLimitSwitch = 10;
 const int upperLimitSwitch = 11;
 // Define digital pin number for the homeButton
 // Pressing this button will run the motor until it hits the upper limit switch
-// TODO: Still need to implement this functionality
 const int homeButton = 12; 
 
 //**************************************************************************
@@ -279,7 +273,7 @@ void loop(void)
     Serial.println();
     printTime(now);
     Serial.print("Previous tide ht: ");
-    Serial.print(results,3);
+    Serial.print(results);
     Serial.println(" ft.");   
     // *****************Calculate current tide height*************
     results = Datum; // initialize results variable, units of feet.
