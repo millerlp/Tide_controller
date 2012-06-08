@@ -181,7 +181,7 @@ void loop(void)
       currAmp = pgm_read_float_near(&Amp[harms]);
       currEquilarg = pgm_read_float_near(&Equilarg[YearIndx][harms]);
       currKappa = pgm_read_float_near(&Kappa[harms]);
-      currSpeed = pgm_read_float_near(&Speed[harms]); // Speed was not scaled to integer
+      currSpeed = pgm_read_float_near(&Speed[harms]); 
 
       // Calculate each component of the overall tide equation 
       // The currHours value is assumed to be in hours from the start of the
