@@ -80,19 +80,23 @@ const int stepperStep = 9; // define stepper step pin. Connect to
 
 //*******************************
 //----------------------------------------------------------------------------------
-// Initialize harmonic constant arrays. These each hold 37 values for
-// the tide site that was extracted using the R scripts. If you wish
-// to make predictions for a different site, it will be necessary to
-// replace the Amp and Kappa values with values for your site. 
-// These are available from NOAA's http://tidesandcurrent.noaa.gov site.
-// Kappa here is referred to as "Phase" on NOAA's site. The order of the
-// constants is shown below in the names. Unfortunately this does not match
-// NOAA's order, so you will have to rearrange NOAA's values if you want to 
-// put new site values in here.
-// The Speed, Equilarg and Nodefactor arrays can all stay the same for any 
-// site. 
-// All tide predictions are output in Greenwich Mean Time. 
-
+/* Initialize harmonic constant arrays. These each hold 37 values for
+   the tide site that was extracted using the R scripts 
+   'tide_harmonics_parse.R' and 'tide_extract_1site_harmonics_progmem.R'. The 2nd
+   script outputs a text file that contains code that can be copied and pasted
+   into the section below. 
+   If you wish to make predictions for a different site, it will be necessary to
+   replace the Amp and Kappa values with values for your site. Either use the R
+   scripts to get data for a new site, or get the new site values from NOAA.
+   These are available from NOAA's http://tidesandcurrent.noaa.gov site.
+   Kappa here is referred to as "Phase" on NOAA's site. The order of the
+   constants is shown below in the names. Unfortunately this does not match
+   NOAA's order, so you will have to rearrange NOAA's values if you want to 
+   put new site values in here.
+   The Speed, Equilarg and Nodefactor arrays can all stay the same for any 
+   site. 
+   
+*/
 //-----------------------------------------------------
 // Begin pasted section from R script "tide_extract_1site_harmonics_progmem.R"
 // Selected station:  Monterey, Monterey Harbor, California 
