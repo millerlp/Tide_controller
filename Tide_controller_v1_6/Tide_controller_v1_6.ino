@@ -278,12 +278,6 @@ void loop(void)
     // *****************Calculate current tide height*************
     results = Datum; // initialize results variable, units of feet.
     for (int harms = 0; harms < 37; harms++) {
-      // Many of the constants are stored as unsigned integers to 
-      // save space. These steps convert them back to their real values.
-//      currNodefactor = pgm_read_word_near(&Nodefactor[YearIndx][harms]) / float(10000);
-//      currAmp = pgm_read_word_near(&Amp[harms]) / float(1000);
-//      currEquilarg = pgm_read_word_near(&Equilarg[YearIndx][harms]) / float(100);
-//      currKappa = pgm_read_word_near(&Kappa[harms]) / float(10);
       currNodefactor = pgm_read_float_near(&Nodefactor[YearIndx][harms]);
       currAmp = pgm_read_float_near(&Amp[harms]);
       currEquilarg = pgm_read_float_near(&Equilarg[YearIndx][harms]);
