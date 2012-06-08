@@ -199,6 +199,7 @@ const int lowerLimitSwitch = 10;
 const int upperLimitSwitch = 11;
 // Define digital pin number for the homeButton
 // Pressing this button will run the motor until it hits the upper limit switch
+// TODO: Still need to implement this functionality
 const int homeButton = 12; 
 
 //**************************************************************************
