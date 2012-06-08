@@ -47,6 +47,9 @@
 #include <Wire.h>
 #include <RTClib.h>  // Available at https://github.com/adafruit/RTClib
 // Real Time Clock setup
+// It is assumed that the SDA data line for the real time clock is attached to 
+// Arduino analog pin 4, and SCL clock line is attached to analog pin 5, according
+// to the Wire library.
 RTC_DS1307 RTC;      // This line remains the same even if you use the DS3231 chip
 unsigned int YearIndx = 0;    // Used to index rows in the Equilarg/Nodefactor arrays
 float currHours = 0;          // Elapsed hours since start of year
