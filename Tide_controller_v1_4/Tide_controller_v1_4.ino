@@ -1,14 +1,11 @@
 /* Tide_controller_v1.4
 
-  This version is the first implementation of a stepper motor instead of
-  the Pololu geared motor w/ encoder that I was previously using. 
+  This version is the first implementation of a stepper motor. 
   This version could wind and unwind cable from a spool, but doesn't have
   any travel limit switches, so it is inappropriate for use on a lead-screw
-  setup. It also can only hold 4 years of tide harmonic constituents, since
-  the move to progmem didn't occur until v1.5.
+  setup. 
   
   TODO: implement limit switches
-  TODO: Move integer harmonic constants into PROGMEM
   
   Copyright (C) 2012 Luke Miller
   
@@ -31,7 +28,7 @@
 
   Written under v1.0.1 of the Arduino IDE.
   
-  The harmonics constants for the tide prediction are taken from 
+  The harmonics constituents for the tide prediction are taken from 
   the XTide harmonics file. The original harmonics.tcd file is 
   available at 
   http://www.flaterco.com/xtide/files.html
@@ -46,15 +43,6 @@
 
 // Initial setup
 
-//*******************************
-// Header files for dealing with external interrupts
-// Note that the digitalWriteFast header file needs to be updated to work with
-// Arduino1.0. The change is simple, just open digitalWriteFast.h and change 
-// the initial line from #include "WProgram.h" to #include "Arduino.h"
-// digitalWriteFast is available from 
-// http://code.google.com/p/digitalwritefast/
-//#include "Arduino.h"
-//#include <digitalWriteFast.h> 
 //*******************************
 /*  Stepper motor notes
     I'm using a Big Easy Driver to control a unipolar stepper motor. This
@@ -79,19 +67,22 @@ const int stepperStep = 9; // define stepper step pin. Connect to
 #include <RTClib.h>
 //*******************************
 //----------------------------------------------------------------------------------
-// Initialize harmonic constant arrays. These each hold 37 values for
-// the tide site that was extracted using the R scripts. If you wish
-// to make predictions for a different site, it will be necessary to
-// replace the Amp and Kappa values with values for your site. 
-// These are available from NOAA's http://tidesandcurrent.noaa.gov site.
-// Kappa here is referred to as "Phase" on NOAA's site. The order of the
-// constants is shown below in the names. Unfortunately this does not match
-// NOAA's order, so you will have to rearrange NOAA's values if you want to 
-// put new site values in here.
-// The Speed, Equilarg and Nodefactor arrays can all stay the same for any 
-// site. 
-// All tide predictions are output in Greenwich Mean Time. 
+/* Initialize harmonic constituent arrays. These each hold 37 values for
+   the tide site that was extracted using the R scripts:
+   tide_harmonics_parse.R and tide_site_extract_harmonics.R 
+   If you wish to make predictions for a different site, it will be necessary to
+   replace the Amp and Kappa values with values for your site. 
+   These are available from NOAA's http://tidesandcurrent.noaa.gov site.
+   Kappa here is referred to as "Phase" on NOAA's site. The order of the
+   constituents is shown below in the names. Unfortunately this does not match
+   NOAA's order, so you will have to rearrange NOAA's values if you want to 
+   put new site values in here by hand.
+   The Speed, Equilarg and Nodefactor arrays can all stay the same for any 
+   site. 
+*/
 
+//-----------------------------------------------------
+// Begin pasted section from R script "tide_site_extract_harmonics.R"
 // Selected station:  Monterey, Monterey Harbor, California 
 // The 'datum' printed here is the difference between mean sea level and 
 // mean lower low water for the NOAA station. These two values can be 
@@ -100,38 +91,44 @@ const int stepperStep = 9; // define stepper step pin. Connect to
 const float Datum = 2.8281 ; // units in feet
 // Harmonic constant names: J1, K1, K2, L2, M1, M2, M3, M4, M6, M8, N2, 2N2, O1, OO1, P1, Q1, 2Q1, R2, S1, S2, S4, S6, T2, LDA2, MU2, NU2, RHO1, MK3, 2MK3, MN4, MS4, 2SM2, MF, MSF, MM, SA, SSA
 // These names match the NOAA names, except LDA2 here is LAM2 on NOAA's site
-// Amp scaled by 1000, so divide by 1000 to convert to original float value
-const unsigned int Amp[] = {71,1199,121,23,38,1616,0,0,0,0,368,44,753,36,374,134,16,3,33,428,0,0,22,11,41,72,26,0,0,0,0,0,0,0,0,157,90};
-// Kappa scaled by 10, so divide by 10 to convert to original float value
-const unsigned int Kappa[] = {2334,2198,1720,2202,2259,1811,0,0,0,0,1546,1239,2034,2502,2156,1951,1994,1802,3191,1802,0,0,1678,1807,1146,1611,1966,0,0,0,0,0,0,0,0,2060,2839};
+typedef float PROGMEM prog_float_t; // Need to define this type before use
+PROGMEM prog_float_t Amp[] = {0.071,1.199,0.121,0.023,0.038,1.616,0,0,0,0,0.368,0.044,0.753,0.036,0.374,0.134,0.016,0.003,0.033,0.428,0,0,0.022,0.011,0.041,0.072,0.026,0,0,0,0,0,0,0,0,0.157,0.09};
+PROGMEM prog_float_t Kappa[] = {233.4,219.8,172,220.2,225.9,181.1,0,0,0,0,154.6,123.9,203.4,250.2,215.6,195.1,199.4,180.2,319.1,180.2,0,0,167.8,180.7,114.6,161.1,196.6,0,0,0,0,0,0,0,0,206,283.9};
 // Speed is unscaled, stored as the original float values
-const float Speed[] = {15.58544,15.04107,30.08214,29.52848,14.49669,28.9841,43.47616,57.96821,86.95231,115.9364,28.43973,27.89535,13.94304,16.1391,14.95893,13.39866,12.85429,30.04107,15,30,60,90,29.95893,29.45563,27.96821,28.51258,13.47151,44.02517,42.92714,57.42383,58.9841,31.0159,1.098033,1.015896,0.5443747,0.0410686,0.0821373};
-// Equilarg scaled by 100. Divide by 100 to get original value.
-const unsigned int Equilarg[4][37] = { 
-{17495,1851,21655,15782,23131,19425,29137,2850,22275,5700,4193,24962,17162,5364,34993,1930,22699,17692,18000,0,0,0,308,2959,2660,17891,15628,21276,999,23618,19425,16575,3101,16575,15232,28007,20013},
-{27537,1770,21457,34814,15957,27019,22529,18038,9058,77,1609,12198,24892,33361,34919,35482,10072,17765,18000,0,0,0,235,28737,17891,7302,5175,28789,16269,28627,27019,8981,31235,8981,25410,28081,20162},
-{2,1486,20897,18274,7278,1035,19553,2071,3106,4142,2753,4470,35316,22123,34943,1033,2751,17739,18000,0,0,0,261,19806,1982,265,34546,2521,585,3788,1035,34965,20404,34965,34283,28057,20115},
-{8338,1130,20240,366,32299,11042,16563,22084,33126,8168,3886,32732,9858,10509,34967,2703,31549,17714,18000,0,0,0,286,10865,22064,29219,28036,12172,20954,14929,11042,24958,9325,24958,7155,28033,20067} 
+PROGMEM prog_float_t Speed[] = {15.58544,15.04107,30.08214,29.52848,14.49669,28.9841,43.47616,57.96821,86.95231,115.9364,28.43973,27.89535,13.94304,16.1391,14.95893,13.39866,12.85429,30.04107,15,30,60,90,29.95893,29.45563,27.96821,28.51258,13.47151,44.02517,42.92714,57.42383,58.9841,31.0159,1.098033,1.015896,0.5443747,0.0410686,0.0821373};
+PROGMEM prog_float_t Equilarg[10][37] = { 
+{174.95,18.51,216.55,157.82,231.31,194.25,291.37,28.5,222.75,57,41.93,249.62,171.62,53.64,349.93,19.3,226.99,176.92,180,0,0,0,3.08,29.59,26.6,178.91,156.28,212.76,9.99,236.18,194.25,165.75,31.01,165.75,152.32,280.07,200.13},
+{275.37,17.7,214.57,348.14,159.57,270.19,225.29,180.38,90.58,0.77,16.09,121.98,248.92,333.61,349.19,354.82,100.72,177.65,180,0,0,0,2.35,287.37,178.91,73.02,51.75,287.89,162.69,286.28,270.19,89.81,312.35,89.81,254.1,280.81,201.62},
+{0.02,14.86,208.97,182.74,72.78,10.35,195.53,20.71,31.06,41.42,27.53,44.7,353.16,221.23,349.43,10.33,27.51,177.39,180,0,0,0,2.61,198.06,19.83,2.65,345.46,25.21,5.85,37.88,10.35,349.65,204.04,349.65,342.83,280.57,201.15},
+{83.38,11.3,202.4,3.66,322.99,110.42,165.63,220.84,331.26,81.68,38.87,327.32,98.58,105.09,349.67,27.03,315.49,177.14,180,0,0,0,2.86,108.65,220.64,292.19,280.36,121.72,209.54,149.29,110.42,249.58,93.25,249.58,71.55,280.33,200.67},
+{166.42,7.56,195.61,182.09,211.44,210.46,135.69,60.92,271.39,121.85,50.19,249.92,204.31,348,349.9,44.04,243.77,176.88,180,0,0,0,3.12,19.21,61.44,221.71,215.56,218.02,53.36,260.65,210.46,149.54,341.84,149.54,160.27,280.1,200.19},
+{264.33,5.26,191.35,1.96,102.4,286.18,69.27,212.36,138.54,64.72,24.12,122.06,283.91,260.62,349.16,21.85,119.79,177.61,180,0,0,0,2.39,276.77,213.53,115.59,113.32,291.44,207.11,310.3,286.18,73.82,258.36,73.82,262.06,280.84,201.69},
+{349.75,2.87,186.44,202.17,42.75,26.41,39.61,52.82,79.23,105.64,35.63,44.85,27.45,150.48,349.4,36.66,45.88,177.35,180,0,0,0,2.65,187.53,54.51,45.29,46.33,29.28,49.95,62.04,26.41,333.59,151.52,333.59,350.78,280.6,201.21},
+{76.92,1.58,183.41,39.83,314.62,126.83,10.24,253.65,20.48,147.31,47.32,327.82,129.41,45.42,349.63,49.91,330.4,177.1,180,0,0,0,2.9,98.47,255.68,335.19,337.77,128.41,252.07,174.15,126.83,233.17,48,233.17,79.5,280.37,200.73},
+{165.67,1.37,182.52,211.35,206.58,227.47,341.21,94.94,322.41,189.88,59.24,251.02,230.02,304.87,349.87,61.8,253.57,176.84,180,0,0,0,3.16,9.64,97.08,265.3,267.86,228.84,93.57,286.71,227.47,132.53,307.42,132.53,168.23,280.13,200.25},
+{269.75,3.07,185.62,17.26,90.25,303.97,275.96,247.95,191.92,135.9,33.96,123.94,304.24,235.22,349.13,34.23,124.21,177.57,180,0,0,0,2.43,267.98,249.95,159.97,160.24,307.04,244.88,337.93,303.97,56.03,235.49,56.03,270.01,280.87,201.75} 
  };
 
-// Nodefactor scaled by 10000. Divide by 10000 to get original float value.
-const unsigned int Nodefactor[4][37] = { 
-{9491,9602,8878,11647,11232,10169,10257,10343,10519,10698,10169,10169,9349,7887,10000,9349,9349,10000,10000,10000,10000,10000,10000,10169,10169,10169,9349,9765,9931,10343,10169,10169,8592,10169,10577,10000,10000},
-{8928,9234,8156,12048,8780,10271,10411,10552,10839,11134,10271,10271,8748,6334,10000,8748,8748,10000,10000,10000,10000,10000,10000,10271,10271,10271,8748,9485,9743,10552,10271,10271,7448,10271,10936,10000,10000},
-{8492,8957,7680,10216,13201,10344,10520,10699,11067,11448,10344,10344,8290,5315,10000,8290,8290,10000,10000,10000,10000,10000,10000,10344,10344,10344,8290,9265,9583,10699,10344,10344,6642,10344,11190,10000,10000},
-{8278,8824,7472,8780,15575,10377,10571,10768,11173,11594,10377,10377,8068,4868,10000,8068,8068,10000,10000,10000,10000,10000,10000,10377,10377,10377,8068,9156,9501,10768,10377,10377,6271,10377,11307,10000,10000} 
+PROGMEM prog_float_t Nodefactor[10][37] = { 
+{0.9491,0.9602,0.8878,1.1647,1.1232,1.017,1.0257,1.0343,1.0519,1.0698,1.017,1.017,0.9349,0.7887,1,0.9349,0.9349,1,1,1,1,1,1,1.017,1.017,1.017,0.9349,0.9765,0.9931,1.0343,1.017,1.017,0.8592,1.017,1.0577,1,1},
+{0.8928,0.9234,0.8156,1.2048,0.878,1.0272,1.0411,1.0552,1.0839,1.1134,1.0272,1.0272,0.8748,0.6334,1,0.8748,0.8748,1,1,1,1,1,1,1.0272,1.0272,1.0272,0.8748,0.9485,0.9743,1.0552,1.0272,1.0272,0.7448,1.0272,1.0937,1,1},
+{0.8492,0.8957,0.768,1.0216,1.3201,1.0344,1.052,1.0699,1.1067,1.1448,1.0344,1.0344,0.829,0.5315,1,0.829,0.829,1,1,1,1,1,1,1.0344,1.0344,1.0344,0.829,0.9265,0.9583,1.0699,1.0344,1.0344,0.6642,1.0344,1.119,1,1},
+{0.8278,0.8824,0.7472,0.878,1.5575,1.0377,1.0571,1.0768,1.1173,1.1594,1.0377,1.0377,0.8068,0.4868,1,0.8068,0.8068,1,1,1,1,1,1,1.0377,1.0377,1.0377,0.8068,0.9156,0.9501,1.0768,1.0377,1.0377,0.6271,1.0377,1.1307,1,1},
+{0.8343,0.8864,0.7533,0.9704,1.4048,1.0367,1.0556,1.0747,1.1141,1.155,1.0367,1.0367,0.8135,0.5,1,0.8135,0.8135,1,1,1,1,1,1,1.0367,1.0367,1.0367,0.8135,0.9189,0.9526,1.0747,1.0367,1.0367,0.6381,1.0367,1.1272,1,1},
+{0.8669,0.9068,0.7865,1.1656,0.9653,1.0315,1.0477,1.0641,1.0977,1.1323,1.0315,1.0315,0.8475,0.5711,1,0.8475,0.8475,1,1,1,1,1,1,1.0315,1.0315,1.0315,0.8475,0.9354,0.965,1.0641,1.0315,1.0315,0.6961,1.0315,1.109,1,1},
+{0.9176,0.9394,0.8458,1.204,0.9343,1.0229,1.0345,1.0463,1.0702,1.0947,1.0229,1.0229,0.9011,0.6981,1,0.9011,0.9011,1,1,1,1,1,1,1.0229,1.0229,1.0229,0.9011,0.9609,0.9829,1.0463,1.0229,1.0229,0.7936,1.0229,1.0783,1,1},
+{0.9761,0.9782,0.9272,0.9582,1.6115,1.0117,1.0176,1.0235,1.0354,1.0475,1.0117,1.0117,0.9643,0.8745,1,0.9643,0.9643,1,1,1,1,1,1,1.0117,1.0117,1.0117,0.9643,0.9897,1.0012,1.0235,1.0117,1.0117,0.9188,1.0117,1.039,1,1},
+{1.0336,1.0176,1.0225,0.7337,1.9813,0.9992,0.9989,0.9985,0.9977,0.9969,0.9992,0.9992,1.0279,1.0859,1,1.0279,1.0279,1,1,1,1,1,1,0.9992,0.9992,0.9992,1.0279,1.0168,1.016,0.9985,0.9992,0.9992,1.0571,0.9992,0.9955,1,1},
+{1.0836,1.0529,1.1201,1.0649,1.5936,0.987,0.9805,0.9741,0.9614,0.9489,0.987,0.987,1.085,1.309,1,1.085,1.085,1,1,1,1,1,1,0.987,0.987,0.987,1.085,1.0392,1.0257,0.9741,0.987,0.987,1.1924,0.987,0.953,1,1} 
  };
 
-// The currYear array will be used as a reference for which row of the
-// Equilarg and Nodefactor arrays we should be pulling values from.
-const int currYear[] = {2012,2013,2014,2015};
+// Define unix time values for the start of each year.
+//                                      2012       2013       2014       2015       2016       2017       2018       2019       2020       2021
+PROGMEM prog_uint32_t startSecs[] = {1325376000,1356998400,1388534400,1420070400,1451606400,1483228800,1514764800,1546300800,1577836800,1609459200};
 
-// Define unixtime values for the start of each year
-//                               2012        2013        2014        2015
-unsigned long startSecs[] = {1325376000, 1356998400, 1388534400, 1420070400};
-
-// 1st year in the Equilarg/Nodefactor arrays
+// 1st year of data in the Equilarg/Nodefactor/startSecs arrays.
 const unsigned int startYear = 2012;
+//------------------------------------------------------------------
 
 // Define some variables that will hold float-converted versions of the constants above
 float currAmp;
@@ -152,20 +149,6 @@ const int adjustGMT = 8;     // Time zone adjustment to get time in GMT. Make su
 int secs = 0; // Keep track of previous seconds value in main loop
 int currMinute; // Keep track of current minute value in main loop
 //------------------------------------------------------------------------------------------------
-
-
-//-----------------------------------------------
-// External interrupt setup for motor position encoder
-// Code adapted from
-// http://www.billporter.info/sagar-update-new-motor-controller-and-motors/
-//#define c_EncoderPinInterrupt 0    // interrupt 0 (digital pin 2 on Ard328)
-//#define c_EncoderPinA 2            // digital pin 2
-//#define c_EncoderPinB 4            // digital pin 4 on Ard328
-////#define EncoderIsReversed        // uncomment if encoder counts the wrong direction
-//volatile bool _EncoderBSet;
-//volatile long _EncoderTicks = 0;
-//-----------------------------------------------
-
 
 float currPos = 6.0; // Current position, based on limit switch height. Units = ft.
 float results = currPos;
@@ -197,14 +180,7 @@ void setup(void)
 {  
   Wire.begin();
   RTC.begin();
-  //--------------------------------------------------
-  //Quadrature encoders
-//  pinMode(c_EncoderPinA, INPUT);  // sets encoder pin A as input
-//  digitalWrite(c_EncoderPinA, LOW);  // turn on pullup resistor
-//  pinMode(c_EncoderPinB, INPUT);  // sets encoder pin B as input
-//  digitalWrite(c_EncoderPinB, LOW); // turn on pullup resistor
-//  attachInterrupt(c_EncoderPinInterrupt, HandleInterruptA, RISING);
-  //--------------------------------------------------
+
   pinMode(stepperDir, OUTPUT);   // direction pin for Big Easy Driver
   pinMode(stepperStep, OUTPUT);  // step pin for Big Easy driver. One step per rise.
   digitalWrite(stepperDir, LOW);
@@ -216,29 +192,7 @@ void setup(void)
   //************************************
   DateTime now = RTC.now();
   currMinute = now.minute(); // Store current minute value
-  Serial.print(now.year(), DEC);
-  Serial.print('/');
-  Serial.print(now.month(), DEC);
-  Serial.print('/');
-  Serial.print(now.day(), DEC);
-  Serial.print(' ');
-  Serial.print(now.hour(), DEC);
-  Serial.print(':');
-  if (now.minute() < 10) {
-    Serial.print("0");
-    Serial.print(now.minute());
-  }
-  else if (now.minute() >= 10) {
-    Serial.print(now.minute());
-  }
-  Serial.print(':');
-  if (now.second() < 10) {
-    Serial.print("0");
-    Serial.println(now.second());
-  }
-  else if (now.second() >= 10) {
-    Serial.println(now.second());
-  }
+  printTime(now);
   delay(2000);
   // TODO: Create limit switch routine for initializing tide height value
   //       after a restart. 
@@ -263,9 +217,9 @@ void loop(void)
     currMinute = now.minute();                   // update currMinute
     
     // Calculate difference between current year and starting year.
-    YearIndx = startYear - now.year();
+    YearIndx = now.year() - startYear;
     // Calculate hours since start of current year. Hours = seconds / 3600
-    currHours = (now.unixtime() - startSecs[YearIndx]) / float(3600);
+    currHours = (now.unixtime() - pgm_read_dword_near(&startSecs[YearIndx])) / float(3600);
     // Shift currHours to Greenwich Mean Time
     currHours = currHours + adjustGMT;
     
@@ -275,19 +229,18 @@ void loop(void)
     // *****************Calculate current tide height*************
     results = Datum; // initialize results variable, units of feet.
     for (int harms = 0; harms < 37; harms++) {
-      // Many of the constants are stored as unsigned integers to save space. These
-      // steps convert them back to their real values.
-      currNodefactor = Nodefactor[YearIndx][harms] / float(10000);
-      currAmp = Amp[harms] / float(1000);
-      currEquilarg = Equilarg[YearIndx][harms] / float(100);
-      currKappa = Kappa[harms] / float(10);
-      currSpeed = Speed[harms]; // Speed was not scaled to integer
+      currNodefactor = pgm_read_float_near(&Nodefactor[YearIndx][harms]);
+      currAmp = pgm_read_float_near(&Amp[harms]);
+      currEquilarg = pgm_read_float_near(&Equilarg[YearIndx][harms]);
+      currKappa = pgm_read_float_near(&Kappa[harms]);
+      currSpeed = pgm_read_float_near(&Speed[harms]);
       
     // Calculate each component of the overall tide equation 
     // The currHours value is assumed to be in hours from the start of the
     // year, in the Greenwich Mean Time zone, not the local time zone.
     // There is no daylight savings time adjustment here.  
-      results = results + (currNodefactor * currAmp * cos( (currSpeed * currHours + currEquilarg - currKappa) * DEG_TO_RAD));
+      results = results + (currNodefactor * currAmp * 
+        cos( (currSpeed * currHours + currEquilarg - currKappa) * DEG_TO_RAD));
     }
     //******************End of Tide Height calculation*************
      
@@ -305,29 +258,7 @@ void loop(void)
     //********************************
     // For debugging
     // Print current time to serial monitor
-    Serial.print(now.year(), DEC);
-    Serial.print('/');
-    Serial.print(now.month(), DEC);
-    Serial.print('/');
-    Serial.print(now.day(), DEC);
-    Serial.print(' ');
-    Serial.print(now.hour(), DEC);
-    Serial.print(':');
-    if (now.minute() < 10) {
-      Serial.print("0");
-      Serial.print(now.minute());
-    }
-    else if (now.minute() >= 10) {
-      Serial.print(now.minute());
-    }
-    Serial.print(':');
-    if (now.second() < 10) {
-      Serial.print("0");
-      Serial.println(now.second());
-    }
-    else if (now.second() >= 10) {
-      Serial.println(now.second());
-    }
+     printTime(now);
      Serial.print("Height diff: ");
      Serial.println(heightDiff);
      Serial.print("stepVal calc: ");
@@ -374,19 +305,33 @@ void loop(void)
  
 } // end of main loop
 
-//-----------------------------------------------------------------
-//  Welcome to the interrupt service routine for counting
-//  motor encoder triggers (including rotation direction).
-//  Interrupt service routine should trigger each time
-//  digital pin 2 (interrupt 0) get a RISING signal.
-//void HandleInterruptA()
-//{
-//  //Test transition of pin B, we already know pin A just went high
-//  _EncoderBSet = digitalReadFast(c_EncoderPinB); // read pin B
-//
-//#ifdef EncoderIsReversed
-//    _EncoderTicks += _EncoderBSet ? -1 : +1;
-//#else
-//  _EncoderTicks -= _EncoderBSet ? -1 : +1;    
-//#endif
-//}
+//******************************************************
+// Function for printing the current date/time to the 
+// serial port in a nicely formatted layout.
+void printTime(DateTime now) {
+  Serial.print(now.year(), DEC);
+  Serial.print('/');
+  Serial.print(now.month(), DEC);
+  Serial.print('/');
+  Serial.print(now.day(), DEC);
+  Serial.print(' ');
+  Serial.print(now.hour(), DEC);
+  Serial.print(':');
+  if (now.minute() < 10) {
+    Serial.print("0");
+    Serial.print(now.minute());
+  }
+  else if (now.minute() >= 10) {
+    Serial.print(now.minute());
+  }
+  Serial.print(':');
+  if (now.second() < 10) {
+    Serial.print("0");
+    Serial.println(now.second());
+  }
+  else if (now.second() >= 10) {
+    Serial.println(now.second());
+  }
+}
+//********************************************************
+
