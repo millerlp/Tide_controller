@@ -94,14 +94,14 @@ const int stepperStep = 9; // define stepper step pin. Connect to
 */
 
 //-----------------------------------------------------
-// Begin pasted section from R script "tide_extract_1site_harmonics_progmem.R"
+// Begin pasted section from R script "tide_site_extract_harmonics.R"
 // Selected station:  Monterey, Monterey Harbor, California 
 // The 'datum' printed here is the difference between mean sea level and 
 // mean lower low water for the NOAA station. These two values can be 
 // found for NOAA tide reference stations on the tidesandcurrents.noaa.gov
 //  site under the datum page for each station.
 const float Datum = 2.8281 ; // units in feet
-// Harmonic constituent names: J1, K1, K2, L2, M1, M2, M3, M4, M6, M8, N2, 2N2, O1, OO1, P1, Q1, 2Q1, R2, S1, S2, S4, S6, T2, LDA2, MU2, NU2, RHO1, MK3, 2MK3, MN4, MS4, 2SM2, MF, MSF, MM, SA, SSA
+// Harmonic constant names: J1, K1, K2, L2, M1, M2, M3, M4, M6, M8, N2, 2N2, O1, OO1, P1, Q1, 2Q1, R2, S1, S2, S4, S6, T2, LDA2, MU2, NU2, RHO1, MK3, 2MK3, MN4, MS4, 2SM2, MF, MSF, MM, SA, SSA
 // These names match the NOAA names, except LDA2 here is LAM2 on NOAA's site
 typedef float PROGMEM prog_float_t; // Need to define this type before use
 PROGMEM prog_float_t Amp[] = {0.071,1.199,0.121,0.023,0.038,1.616,0,0,0,0,0.368,0.044,0.753,0.036,0.374,0.134,0.016,0.003,0.033,0.428,0,0,0.022,0.011,0.041,0.072,0.026,0,0,0,0,0,0,0,0,0.157,0.09};
