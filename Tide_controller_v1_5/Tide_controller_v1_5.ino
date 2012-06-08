@@ -7,8 +7,6 @@
  limit switches. Tidal harmonic constituents have been moved to
  program memory, allowing more years of data to be stored.
  
- Copyright (C) 2012 Luke Miller
- 
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation, either version 3 of the License, or
