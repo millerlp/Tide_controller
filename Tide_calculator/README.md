@@ -14,4 +14,7 @@ repository.
 
 In addition to the basic Arduino, the only other required piece of hardware is a 
 real time clock, based on the DS1307 or DS3231 chips, connected to analog pins
-4 + 5 for the I2C interface (on traditional Arduinos such as the Uno). 
+4 + 5 for the I2C interface (on traditional Arduinos such as the Uno). The routine
+needs a current date and time to correctly make predictions. If used for sites outside
+of the Pacific Standard Time zone, you'll also need to modify the value of adjustGMT 
+inside the sketch.
