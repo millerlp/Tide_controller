@@ -51,9 +51,8 @@
 RTC_DS1307 RTC;
 // Tide calculation library setup
 #include "TidePortSanLuis.h"
-TideCalc myTideCalc;  // Create TideCalc object
+TideCalc myTideCalc;  // Create TideCalc object called myTideCalc
 
-int secs = 0; // Keep track of previous seconds value in main loop
 int currMinute; // Keep track of current minute value in main loop
 //---------------------------------------------------------------------------------------
 /*  Stepper motor notes
@@ -108,8 +107,7 @@ const float stepConv = 0.000002604;   // Value for 10 tpi lead screw
 float heightDiff;    // Float variable to hold height difference, in ft.                                    
 long stepVal = 0;     // Store the number of steps needed
 // to achieve the new height
-long counts = 0;       // Store the number of steps that have
-// gone by so far.
+
 
 //---------------------------------------------------------------------------
 // Define the digital pin numbers for the limit switches. These will be 
