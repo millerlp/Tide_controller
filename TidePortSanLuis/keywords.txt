@@ -1,0 +1,2 @@
+TideCalc	KEYWORD1
+currentTide	KEYWORD2
