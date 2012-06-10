@@ -48,7 +48,7 @@
 // Real Time Clock setup
 RTC_DS1307 RTC;      // This line remains the same even if you use the DS3231 chip
 
-// Tide calculation library setup
+// Tide calculation library setup. Change the library name to use a different site.
 #include "TideSanDiegoSanDiegoBaylib.h"
 TideCalc myTideCalc;  // Create TideCalc object called myTideCalc
 
