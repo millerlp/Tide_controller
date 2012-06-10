@@ -49,7 +49,7 @@
 RTC_DS1307 RTC;      // This line remains the same even if you use the DS3231 chip
 
 // Tide calculation library setup
-#include "TidePortSanLuis.h"
+#include "TideSanDiegoSanDiegoBaylib.h"
 TideCalc myTideCalc;  // Create TideCalc object called myTideCalc
 
 
@@ -69,6 +69,8 @@ void setup(void)
   DateTime now = RTC.now();
   currMinute = now.minute(); // Store current minute value
   printTime(now);  // Call printTime function to print date/time to serial
+  Serial.println("Calculating tides for: ");
+  Serial.println(myTideCalc.returnStationID());
   delay(2000);
 }  // End of setup loop.
 
