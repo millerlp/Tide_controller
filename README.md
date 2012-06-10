@@ -14,7 +14,7 @@ your other sketches are normally stored (not in the libraries folder).
 
 Open the Tide_calculator sketch in the Arduino IDE, and make sure the correct tide site
 library is referenced with a line like:
-#include "TideMontereyHarborlib.h"
+\#include "TideMontereyHarborlib.h"
 
 Upload the program to the Arduino. Open the serial monitor to view the output. 
 
