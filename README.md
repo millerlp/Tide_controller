@@ -14,15 +14,17 @@ Copy the folder with the library for your site (i.e. TideMontereyHarborlib) into
 Copy the Tide_calculator or Tide_controller folder (most recent version) into your Arduino folder where 
 your other sketches are normally stored (not in the libraries folder).
 
-Open the Tide_calculator sketch in the Arduino IDE, and make sure the correct tide site
-library is referenced with a line like:
+Open the Tide_calculator or Tide_controller sketch in the Arduino IDE, and make sure the correct tide site
+library is referenced in the Initial Setup section, near line 55, with a line like:
 
 \#include "TideMontereyHarborlib.h"
+
+Change that library name to match your site's library name. 
 
 Upload the program to the Arduino. Open the serial monitor to view the output. 
 
 ------------------------------
-If the real time clock attached to the Arduino is not yet set, you need to set it 
+If the real time clock attached to the Arduino is not yet set, you need to set it once
 using the RealTimeClock_reset sketch found in the folder of the same name. Upload that
 to the Arduino, and it should automatically reset the real time clock. Make sure your
 computer's clock is set to local Standard Time, not Daylight Savings time (which runs Mar-Nov
