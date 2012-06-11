@@ -1,15 +1,18 @@
 /* ReatTimeClock_reset
-  Use this sketch to reset the DS1307 Real Time Clock. 
-  To accomplish this, you must power down the Arduino (unplug USB)
-  and remove the backup battery from the DS1307. Let it sit for a 
-  few seconds to ensure that the clock stops. Reinstall the 
-  backup battery and plug the USB cable back into the Arduino.
-  Upload this sketch to the Arduino, and the clock should be reset
-  to your current computer time. 
+  Use this sketch to reset the DS1307 or DS3231 Real Time Clock. 
+  It will grab the computer's current time during compilation and 
+  send that value to the real time clock. 
+  
+  Afterwards, immediately upload a different sketch to the Arduino
+  so that it doesn't try to constantly reset the clock when it 
+  powers up the next time. If it does reset, the Arduino will reset 
+  the clock with the old compile time stamp, which will be out of
+  date.
 */
 
 #include <Wire.h>
-#include <RTClib.h>
+#include <SPI.h> // Required for RTClib to compile properly
+#include <RTClib.h> // From https://github.com/MrAlvin/RTClib
 
 RTC_DS1307 RTC;
 
@@ -20,15 +23,8 @@ void setup(void)
   delay(2000);
   Wire.begin();
   RTC.begin();  
-  // If the Real Time Clock has begun to drift, you can reset it by pulling its
-  // backup battery, powering down the Arduino, replacing the backup battery
-  // and then compiling/uploading this sketch to the Arduino. It will only reset
-  // the time if the real time clock is halted due to power loss.
-  if (! RTC.isrunning()) {
-    // following line sets the RTC to the date & time this sketch was compiled
-    RTC.adjust(DateTime(__DATE__, __TIME__));
-    resetFlag = true; // set the reset flag true
-  }
+  RTC.adjust(DateTime(__DATE__, __TIME__));
+
 
   DateTime now = RTC.now();
   Serial.begin(9600);
@@ -42,15 +38,7 @@ void setup(void)
   Serial.print(':');
   Serial.print(now.minute(), DEC);
   Serial.print(':');
-  Serial.println(now.second(), DEC);
-  if (resetFlag) {
-    Serial.println("Clock was reset.");
-  } 
-  else {
-    Serial.println("Clock was NOT reset.");
-    Serial.println("Pull backup battery and try again.");
-  }
-  
+  Serial.println(now.second(), DEC);  
   delay(2000);
 }
 
