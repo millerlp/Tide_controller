@@ -46,9 +46,12 @@
 #include <avr/pgmspace.h>    // Needed to store values in PROGMEM
 // Header files for talking to real time clock
 #include <Wire.h>
-#include <RTClib.h>  // Available from https://github.com/adafruit/RTClib
+#include <SPI.h>  // Required for RTClib to compile properly
+#include <RTClib.h> // From https://github.com/MrAlvin/RTClib
 // Real Time Clock setup
-RTC_DS1307 RTC;
+RTC_DS3231 RTC;      
+// RTC_DS1307 RTC;  // Uncomment this version if you use the older DS1307 clock
+
 unsigned int YearIndx = 0;    // Used to index rows in the Equilarg/Nodefactor arrays
 float currHours = 0;          // Elapsed hours since start of year
 const int adjustGMT = 8;     // Time zone adjustment to get time in GMT. Make sure this is
