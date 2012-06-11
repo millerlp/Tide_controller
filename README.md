@@ -8,8 +8,10 @@ Installation:
 To simply calculate real-time tide height for a site, install the following:
 
 Copy the RTClib folder into Arduino/libraries/
+
 Copy the folder with the library for your site (i.e. TideMontereyHarborlib) into Arduino/libraries/
-Copy the Tide_calculator folder (most recent version) into your Arduino folder where 
+
+Copy the Tide_calculator or Tide_controller folder (most recent version) into your Arduino folder where 
 your other sketches are normally stored (not in the libraries folder).
 
 Open the Tide_calculator sketch in the Arduino IDE, and make sure the correct tide site
@@ -23,9 +25,12 @@ Upload the program to the Arduino. Open the serial monitor to view the output.
 If the real time clock attached to the Arduino is not yet set, you need to set it 
 using the RealTimeClock_reset sketch found in the folder of the same name. Upload that
 to the Arduino, and it should automatically reset the real time clock. Make sure your
-computer's clock is set to Standard Time, not Daylight Savings time (which runs Mar-Nov
+computer's clock is set to local Standard Time, not Daylight Savings time (which runs Mar-Nov
 in most places). The tide prediction routine relies on the time being set to local 
-standard time for your site, otherwise you won't get the current tide height out. 
+standard time for your site, otherwise you won't get the current tide height out. After running
+the RealTimeClock_reset sketch, before unplugging the Arduino, immediately upload a different 
+sketch to the Arduino so that the clock doesn't try to reset itself repeatedly when the Arduino
+restarts.
 
 -------------------------------
 If there is no folder containing a tide prediction library for your desired site, it
