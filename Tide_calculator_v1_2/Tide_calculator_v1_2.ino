@@ -41,7 +41,6 @@
 
 // Initial setup
 //*******************************
-#include <avr/pgmspace.h>    // Needed to store values in PROGMEM
 // Header files for talking to real time clock
 #include <Wire.h>
 #include <SPI.h>  // Required for RTClib to compile properly
