@@ -46,11 +46,14 @@
 #include <avr/pgmspace.h>    // Needed to store values in PROGMEM
 // Header files for talking to real time clock
 #include <Wire.h>
-#include "RTClib.h"  // Available from https://github.com/adafruit/RTClib
+#include <SPI.h>  // Required for RTClib to compile properly
+#include <RTClib.h> // From https://github.com/MrAlvin/RTClib
 // Real Time Clock setup
-RTC_DS1307 RTC;
+RTC_DS3231 RTC;      
+// RTC_DS1307 RTC;  // Uncomment this version if you use the older DS1307 clock
+
 // Tide calculation library setup
-#include "TidePortSanLuis.h"
+#include "TidePortSanLuislib.h"
 TideCalc myTideCalc;  // Create TideCalc object called myTideCalc
 
 int currMinute; // Keep track of current minute value in main loop
