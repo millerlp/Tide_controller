@@ -152,6 +152,8 @@ void setup(void)
   DateTime now = RTC.now();
   currMinute = now.minute(); // Store current minute value
   printTime(now);  // Call printTime function to print date/time to serial
+  Serial.println("Calculating tides for: ");
+  Serial.println(myTideCalc.returnStationID());
   delay(4000);
 
   //************************************
