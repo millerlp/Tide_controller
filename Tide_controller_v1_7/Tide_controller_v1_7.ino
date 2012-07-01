@@ -1,4 +1,4 @@
-/* Tide_controller_v1.6
+/* Tide_controller_v1.7
   Copyright (C) 2012 Luke Miller
  This version is set up to work on a lead-screw driven rack that has
  a limited travel range. There should be a limit switch at each end 
@@ -52,8 +52,8 @@ RTC_DS3231 RTC;
 // RTC_DS1307 RTC;  // Uncomment this version if you use the older DS1307 clock
 
 // Tide calculation library setup
-#include "TidePortSanLuislib.h"
-TideCalc myTideCalc;  // Create TideCalc object called myTideCalc
+#include "TideMontereyHarborlib.h"
+TideCalc myTideCalc;  // Create TideCalc object called myTideCalc 
 
 int currMinute; // Keep track of current minute value in main loop
 //---------------------------------------------------------------------------------------
@@ -78,7 +78,7 @@ const int stepperStep = 9; // define stepper step pin. Connect to
 
 //-----------------------------------------------------------------------------
 float upperPos = 5.3; // Upper limit, located at upperLimitSwitch. Units = ft.
-float lowerPos = 2.3; // Lower limit, located at lowerLimitSwitch. Units = ft.
+float lowerPos = 2.4; // Lower limit, located at lowerLimitSwitch. Units = ft.
 float currPos;  // Current position, within limit switch range.    Units = ft.
 float results;  // results holds the output from the tide calc.    Units = ft.
 // The value for upperPos is taken to be the "home" position, so when ever the
