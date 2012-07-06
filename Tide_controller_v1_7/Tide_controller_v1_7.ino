@@ -52,7 +52,8 @@ RTC_DS3231 RTC;
 // RTC_DS1307 RTC;  // Uncomment this version if you use the older DS1307 clock
 
 // Tide calculation library setup
-#include "TideMontereyHarborlib.h"
+//#include "TideMontereyHarborlib.h"
+#include "TideSanDiegoSanDiegoBaylib.h"
 TideCalc myTideCalc;  // Create TideCalc object called myTideCalc 
 
 int currMinute; // Keep track of current minute value in main loop
@@ -195,7 +196,7 @@ void loop(void)
     Serial.println();
     printTime(now);
     Serial.print("Previous tide ht: ");
-    Serial.print(results);
+    Serial.print(results,3);
     Serial.println(" ft.");   
     
     // Calculate new tide height based on current time
