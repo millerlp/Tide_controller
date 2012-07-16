@@ -173,6 +173,9 @@ void setup(void)
   Serial.println("Calculating tides for: ");
   Serial.println(myTideCalc.returnStationID());
   
+  // Calculate current tide height
+  results = myTideCalc.currentTide(now);
+  
   // Set up 7-segment display
   pinMode(txPin, OUTPUT);
   mySerial.begin(9600);
@@ -181,7 +184,7 @@ void setup(void)
   mySerial.write(1); // Set display brightness (1 - 254)
   mySerial.print("w"); // command byte for setting decimals/colon
   mySerial.write(2); // turn on 2nd decimal point
-  
+  sevenSegDisplay(results); // function to print result to 7-segment display
   delay(4000);
   
   //************************************
