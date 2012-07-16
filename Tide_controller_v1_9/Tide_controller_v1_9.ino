@@ -86,7 +86,7 @@ const int stepperStep = 9; // define stepper step pin. Connect to
 
 //-----------------------------------------------------------------------------
 float upperPos = 5.3; // Upper limit, located at upperLimitSwitch. Units = ft.
-float lowerPos = 2.4; // Lower limit, located at lowerLimitSwitch. Units = ft.
+float lowerPos = 2.3; // Lower limit, located at lowerLimitSwitch. Units = ft.
 float currPos;  // Current position, within limit switch range.    Units = ft.
 float results;  // results holds the output from the tide calc.    Units = ft.
 // The value for upperPos is taken to be the "home" position, so when ever the
@@ -172,7 +172,6 @@ void setup(void)
   printTime(now);  // Call printTime function to print date/time to serial
   Serial.println("Calculating tides for: ");
   Serial.println(myTideCalc.returnStationID());
-  
   // Calculate current tide height
   results = myTideCalc.currentTide(now);
   
@@ -227,7 +226,7 @@ void loop(void)
     Serial.println();
     printTime(now);
     Serial.print("Previous tide ht: ");
-    Serial.print(results,3);
+    Serial.print(results,4);
     Serial.println(" ft.");   
     
     // Calculate new tide height based on current time
@@ -242,18 +241,18 @@ void loop(void)
     // to achieve the new height. The result is cast as an unsigned 
     // long integer.
     stepVal = (long)(heightDiff / stepConv);
-    stepVal = abs(stepVal);  // remove negative sign if present
+    if (stepVal < 0) stepVal = -stepVal; // convert negative values
 
 
     //********************************
     // For debugging
     Serial.print("Height diff: ");
-    Serial.print(heightDiff, 3);
+    Serial.print(heightDiff, 5);
     Serial.println(" ft.");
     Serial.print("stepVal calc: ");
     Serial.println(stepVal);
     Serial.print("Target height: ");
-    Serial.print(results, 3);
+    Serial.print(results, 4);
     Serial.println(" ft.");
     Serial.println(); // blank line
     //******************************************************************
