@@ -196,6 +196,7 @@ void setup(void)
   // (i.e. driven LOW). 
   Serial.println("Returning to upper limit");
   digitalWrite(stepperEnable, LOW); // turn motor power on
+  delay(100);
   while (digitalRead(upperLimitSwitch) != LOW) {
     // Set motor direction, HIGH = counterclockwise
     digitalWrite(stepperDir, HIGH);
@@ -273,6 +274,7 @@ void loop(void)
     {
       // Set motor direction to move downward
       digitalWrite(stepperEnable, LOW); // turn motor power on
+      delay(100);
       digitalWrite(stepperDir, LOW);       
       // Run motor the desired number of steps
       for (int steps = 0; steps < stepVal; steps++) {
@@ -290,6 +292,7 @@ void loop(void)
           break;  // break out of for loop
         }
       }
+      delay(100);
       digitalWrite(stepperEnable, HIGH); // turn motor power off
       if (digitalRead(lowerLimitSwitch) == HIGH) {
         // If the lower limit wasn't reached, then the currPos should
@@ -307,6 +310,7 @@ void loop(void)
       (results < (upperPos + 0.025)) & (digitalRead(upperLimitSwitch) == HIGH) )
     {
       digitalWrite(stepperEnable, LOW); // turn on motor power
+      delay(100);
       // Set motor direction in reverse
       digitalWrite(stepperDir, HIGH);
       // Run motor the desired number of steps
@@ -325,6 +329,7 @@ void loop(void)
           break;  // break out of for loop
         }
       }
+      delay(100);
       digitalWrite(stepperEnable, HIGH); // turn off motor power
       if (digitalRead(upperLimitSwitch) == HIGH) {
         // If the upper limit wasn't reached, then currPos should
@@ -340,14 +345,23 @@ void loop(void)
     if (digitalRead(upperLimitSwitch) == LOW) {
       Serial.println("At upper limit switch, no movement");
       Serial.println();
-      digitalWrite(highLimitLED, HIGH);
-      digitalWrite(lowLimitLED, LOW);
+      digitalWrite(highLimitLED, HIGH); // turn LED on
+      digitalWrite(lowLimitLED, LOW);  // turn LED off
     }
     if (digitalRead(lowerLimitSwitch) == LOW) {
       Serial.println("At lower limit switch, no movement");
       Serial.println();
-      digitalWrite(lowLimitLED, HIGH);
-      digitalWrite(highLimitLED, LOW);
+      digitalWrite(lowLimitLED, HIGH); // turn LED on
+      digitalWrite(highLimitLED, LOW);  // turn LED off
+    }
+    // The lower limit is a bit more flexible depending on 
+    // lower reed switch placement and lowerPos value, so if
+    // tide height is less than lowerPos (but the carriage hasn't
+    // reached the lower limit switch), go ahead and turn 
+    // lower limit LED on to show user that we've reached 
+    // the lower limit. 
+    if (results < lowerPos) {
+      digitalWrite(lowLimitLED, HIGH); // turn LED on
     }
   }    // End of if (now.minute() != currMinute) statement
 
