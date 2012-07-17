@@ -85,8 +85,8 @@ const int stepperStep = 9; // define stepper step pin. Connect to
 //*******************************
 
 //-----------------------------------------------------------------------------
-float upperPos = 5.3; // Upper limit, located at upperLimitSwitch. Units = ft.
-float lowerPos = 2.3; // Lower limit, located at lowerLimitSwitch. Units = ft.
+float upperPos = 5.0; // Upper limit, located at upperLimitSwitch. Units = ft.
+float lowerPos = 2.0; // Lower limit, located at lowerLimitSwitch. Units = ft.
 float currPos;  // Current position, within limit switch range.    Units = ft.
 float results;  // results holds the output from the tide calc.    Units = ft.
 // The value for upperPos is taken to be the "home" position, so when ever the
