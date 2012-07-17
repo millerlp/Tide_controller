@@ -4,7 +4,8 @@
  a limited travel range. There should be a limit switch at each end 
  of the rack's travel, and the distance between the values for 
  upperPos and lowerPos must be equal to the distance between those 
- limit switches. Designed to work with daughterboard rev 5. 
+ limit switches. Designed to work with daughterboard rev 6, which 
+ connects pin 13 to the Big Easy Driver's ENABLE pin. 
  
  Copyright (C) 2012 Luke Miller
  
