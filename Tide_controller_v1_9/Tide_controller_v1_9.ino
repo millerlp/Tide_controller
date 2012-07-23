@@ -293,10 +293,10 @@ void loop(void)
     // ************Raise water level to new position******************
     // If the heightDiff is positive, AND the target level is greater 
     // than the lowerPos limit, AND the target level is less than the 
-    // upperPos limit (plus a 0.025ft buffer), AND the upperLimitSwitch 
+    // upperPos limit (plus a 0.2 ft buffer), AND the upperLimitSwitch 
     // hasn't been activated, then the motor can be moved.
     else if ( (heightDiff > 0) & (results > lowerPos) & 
-      (results < (upperPos + 0.025)) & (digitalRead(upperLimitSwitch) == HIGH) )
+      (results < (upperPos + 0.2)) & (digitalRead(upperLimitSwitch) == HIGH) )
     {
       // Set motor direction in reverse
       digitalWrite(stepperDir, HIGH);
