@@ -307,7 +307,7 @@ void loop(void)
     // upperPos limit (plus a 0.025ft buffer), AND the upperLimitSwitch 
     // hasn't been activated, then the motor can be moved.
     else if ( (heightDiff > 0) & (results > lowerPos) & 
-      (results < (upperPos + 0.025)) & (digitalRead(upperLimitSwitch) == HIGH) )
+      (results < (upperPos + 0.2)) & (digitalRead(upperLimitSwitch) == HIGH) )
     {
       digitalWrite(stepperEnable, LOW); // turn on motor power
       delay(100);
