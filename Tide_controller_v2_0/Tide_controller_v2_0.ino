@@ -77,11 +77,12 @@ SoftwareSerial mySerial = SoftwareSerial(rxPin, txPin);
  of the motor. 
  
  */
-const int stepperDir = 8;  // define stepper direction pin. Connect to 
+const byte stepperDir = 8;  // define stepper direction pin. Connect to 
 // Big Easy Driver DIR pin
-const int stepperStep = 9; // define stepper step pin. Connect to 
+const byte stepperStep = 9; // define stepper step pin. Connect to 
 // Big Easy Driver STEP pin.
-
+const byte stepperEnable = 4; // define motor driver enable pin
+// Connect to Big Easy Driver Enable pin. Pull high to shut off motor
 //*******************************
 
 //-----------------------------------------------------------------------------
@@ -123,15 +124,16 @@ long stepVal = 0;     // Store the number of steps needed
 // Define the digital pin numbers for the limit switches. These will be 
 // wired to one lead from a magentic reed switch. The 2nd lead from each reed 
 // switch will be wired to ground on the Arduino.
-const int lowerLimitSwitch = 10;
-const int upperLimitSwitch = 11;
-// Define digital pin number for the homeButton
-// Pressing this button will run the motor until it hits the upper limit switch
-const int homeButton = 12; 
+const byte lowerLimitSwitch = 10;
+const byte upperLimitSwitch = 11;
+// Define digital pin number for the overrideButton
+// Pressing this button will run the carriage down, until it hits the lower 
+// limit switch
+const byte overrideButton = 12; 
 
 // Define highLimitLED and lowLimitLED pins
-const int lowLimitLED = 5;  // On digital pin 5
-const int highLimitLED = 6; // On digital pin 6
+const byte lowLimitLED = 5;  // On digital pin 5
+const byte highLimitLED = 6; // On digital pin 6
 
 
 //**************************************************************************
@@ -143,16 +145,18 @@ void setup(void)
   //--------------------------------------------------
   pinMode(stepperDir, OUTPUT);   // direction pin for Big Easy Driver
   pinMode(stepperStep, OUTPUT);  // step pin for Big Easy driver. One step per rise.
+  pinMode(stepperEnable, OUTPUT); // enable pin for Big Easy driver motor power
   digitalWrite(stepperDir, LOW);
   digitalWrite(stepperStep, LOW);
+  digitalWrite(stepperEnable, HIGH); // turns off motor power when high  
 
   // Set up switches and input button as inputs. 
   pinMode(lowerLimitSwitch, INPUT);
   digitalWrite(lowerLimitSwitch, HIGH);  // turn on internal pull-up resistor
   pinMode(upperLimitSwitch, INPUT);
   digitalWrite(upperLimitSwitch, HIGH);  // turn on internal pull-up resistor
-  pinMode(homeButton, INPUT);
-  digitalWrite(homeButton, HIGH);        // turn on internal pull-up resistor
+  pinMode(overrideButton, INPUT);
+  digitalWrite(overrideButton, HIGH);        // turn on internal pull-up resistor
   // When using the internal pull-up resistors for the switches above, the
   // default state for the input pin is HIGH (+5V), and goes LOW (0V) when
   // the switch/button connects to ground. Thus, a LOW value indicates that the
@@ -191,6 +195,8 @@ void setup(void)
   // The while loop will continue until the upperLimitSwitch is activated 
   // (i.e. driven LOW). 
   Serial.println("Returning to upper limit");
+  digitalWrite(stepperEnable, LOW); // turn motor power on
+  delay(100);  
   while (digitalRead(upperLimitSwitch) != LOW) {
     // Set motor direction, HIGH = counterclockwise
     digitalWrite(stepperDir, HIGH);
@@ -200,6 +206,7 @@ void setup(void)
     digitalWrite(stepperStep, LOW);
   }
   digitalWrite(highLimitLED, HIGH); // turn on upper limit LED
+  digitalWrite(stepperEnable, HIGH); // turn motor power off  
   currPos = upperPos; // currPos should now equal upperPos
   Serial.print("Current position: ");
   Serial.print(currPos,2);
@@ -265,6 +272,8 @@ void loop(void)
     if ( (heightDiff < 0) & (results < upperPos) & 
       (results > lowerPos) & (digitalRead(lowerLimitSwitch) == HIGH) )
     {
+      digitalWrite(stepperEnable, LOW); // turn motor power on
+      delay(100);      
       // Set motor direction to move downward
       digitalWrite(stepperDir, LOW);       
       // Run motor the desired number of steps
@@ -283,6 +292,8 @@ void loop(void)
           break;  // break out of for loop
         }
       }
+      delay(100);
+      digitalWrite(stepperEnable, HIGH); // turn motor power off      
       if (digitalRead(lowerLimitSwitch) == HIGH) {
         // If the lower limit wasn't reached, then the currPos should
         // be equal to the new water level stored in 'results'.
@@ -298,6 +309,8 @@ void loop(void)
     else if ( (heightDiff > 0) & (results > lowerPos) & 
       (results < (upperPos + 0.2)) & (digitalRead(upperLimitSwitch) == HIGH) )
     {
+      digitalWrite(stepperEnable, LOW); // turn on motor power
+      delay(100);      
       // Set motor direction in reverse
       digitalWrite(stepperDir, HIGH);
       // Run motor the desired number of steps
@@ -316,6 +329,8 @@ void loop(void)
           break;  // break out of for loop
         }
       }
+      delay(100);
+      digitalWrite(stepperEnable, HIGH); // turn off motor power      
       if (digitalRead(upperLimitSwitch) == HIGH) {
         // If the upper limit wasn't reached, then currPos should
         // be equal to the new water level stored in 'results'.
@@ -339,10 +354,30 @@ void loop(void)
       digitalWrite(lowLimitLED, HIGH);
       digitalWrite(highLimitLED, LOW);
     }
+    // The lower limit is a bit more flexible depending on 
+    // lower reed switch placement and lowerPos value, so if
+    // tide height is less than lowerPos (but the carriage hasn't
+    // reached the lower limit switch), go ahead and turn 
+    // lower limit LED on to show user that we've reached 
+    // the lower limit. 
+    if (results < lowerPos) {
+      digitalWrite(lowLimitLED, HIGH); // turn LED on
+    }
   }    // End of if (now.minute() != currMinute) statement
 
   // TODO: implement return-to-home-position routine.
-
+  if (digitalRead(overrideButton) == LOW & lowerLimitSwith == LOW) {
+    // Set motor direction to move downward
+    digitalWrite(stepperDir, LOW);
+    while( (digitalRead(overrideButton) == LOW) & 
+      (digitalRead(lowerLimitSwitch) == HIGH)) {
+      for (int steps = 0; steps <= 99; steps++) {
+        digitalWrite(stepperStep, HIGH);
+        delayMicroseconds(100);
+        digitalWrite(stepperStep, LOW);
+      }
+    }
+  }
 } // End of main loop
 
 
