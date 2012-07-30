@@ -365,18 +365,29 @@ void loop(void)
     }
   }    // End of if (now.minute() != currMinute) statement
 
-  // TODO: implement return-to-home-position routine.
-  if (digitalRead(overrideButton) == LOW & lowerLimitSwith == LOW) {
+  // TODO: implement override routine
+  if ( (digitalRead(overrideButton) == LOW) & 
+    (digitalRead(lowerLimitSwitch) == LOW) ) {
+      digitalWrite(stepperEnable, LOW); // turn on motor power
+      delay(100);     
     // Set motor direction to move downward
     digitalWrite(stepperDir, LOW);
     while( (digitalRead(overrideButton) == LOW) & 
       (digitalRead(lowerLimitSwitch) == HIGH)) {
-      for (int steps = 0; steps <= 99; steps++) {
+        // go through 2400 steps = 0.75 revolutions = 0.075 inches = .00625ft
+      for (int steps = 0; steps <= 2399; steps++) {
         digitalWrite(stepperStep, HIGH);
         delayMicroseconds(100);
         digitalWrite(stepperStep, LOW);
       }
+      // Update currPos to reflect new position
+      currPos = currPos - 0.00625;
     }
+    digitalWrite(stepperEnable, HIGH); // turn off motor power
+    delay(10000); // Give user time to power down Arduino to hold position
+    // If the Arduino stays powered up, it should try to return the 
+    // carriage to the correct height based on the difference between the
+    // new value of currPos and the tide height.
   }
 } // End of main loop
 
