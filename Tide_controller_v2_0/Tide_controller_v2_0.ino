@@ -232,11 +232,21 @@ void setup(void)
         // check lowerLimitSwitch each step, quit if activated
         if (digitalRead(lowerLimitSwitch) == LOW)  {
           // Update current position value
+          Serial.print("Old currPOS: ");
+          Serial.println(currPos);
           currPos = currPos - (steps * stepConv);
+          Serial.print("New currPOS: ");
+          Serial.println(currPos);
           Serial.println("Hit lower limit switch");
           digitalWrite(lowLimitLED, HIGH); // turn on lowLimitLED
           break;  // break out of for loop
         }
+      }
+      // If the lowerLimitSwitch wasn't activated, then the motor
+      // stopped above the limit switch. Set currPos to whatever
+      // value is in results currently. 
+      if (digitalRead(lowerLimitSwitch) == HIGH) {  //switch not triggered
+        currPos = results; // set currPos equal to current tide height
       }
       digitalWrite(stepperEnable, HIGH); // turn motor power off     
   }
