@@ -4,7 +4,7 @@
  a limited travel range. There should be a limit switch at each end 
  of the rack's travel, and the distance between the values for 
  upperPos and lowerPos must be equal to the distance between those 
- limit switches. Designed to work with daughterboard rev 5. 
+ limit switches. Designed to work with daughterboard rev 6. 
  
  Copyright (C) 2012 Luke Miller
  
@@ -81,7 +81,7 @@ const byte stepperDir = 8;  // define stepper direction pin. Connect to
 // Big Easy Driver DIR pin
 const byte stepperStep = 9; // define stepper step pin. Connect to 
 // Big Easy Driver STEP pin.
-const byte stepperEnable = 4; // define motor driver enable pin
+const byte stepperEnable = 12; // define motor driver enable pin
 // Connect to Big Easy Driver Enable pin. Pull high to shut off motor
 //*******************************
 
@@ -129,7 +129,7 @@ const byte upperLimitSwitch = 11;
 // Define digital pin number for the overrideButton
 // Pressing this button will run the carriage down, until it hits the lower 
 // limit switch
-const byte overrideButton = 12; 
+const byte overrideButton = 13; 
 
 // Define highLimitLED and lowLimitLED pins
 const byte lowLimitLED = 5;  // On digital pin 5
@@ -208,6 +208,8 @@ void setup(void)
   digitalWrite(highLimitLED, HIGH); // turn on upper limit LED
   digitalWrite(stepperEnable, HIGH); // turn motor power off  
   currPos = upperPos; // currPos should now equal upperPos
+  //  TODO: lower carriage to proper tide height
+  
   Serial.print("Current position: ");
   Serial.print(currPos,2);
   Serial.println(" ft.");
