@@ -365,9 +365,14 @@ void loop(void)
     }
   }    // End of if (now.minute() != currMinute) statement
 
-  // TODO: implement override routine
+  // Position override routine
+  // Moving the carriage down is a pain to do by hand, so the user
+  // can press a button to drive the carriage down with the motor.
+  // The program will pause for 10 seconds after the movement, in
+  // case the user wants to unplug the power to keep the carriage at
+  // its new position.
   if ( (digitalRead(overrideButton) == LOW) & 
-    (digitalRead(lowerLimitSwitch) == LOW) ) {
+    (digitalRead(lowerLimitSwitch) == HIGH) ) {
       digitalWrite(stepperEnable, LOW); // turn on motor power
       delay(100);     
     // Set motor direction to move downward
@@ -382,6 +387,10 @@ void loop(void)
       }
       // Update currPos to reflect new position
       currPos = currPos - 0.00625;
+      if (digitalRead(lowerLimitSwitch) == LOW) {
+        digitalWrite(lowLimitLED, HIGH); // turn on lower limit LED
+        digitalWrite(stepperEnable, HIGH); // turn off motor power
+      }
     }
     digitalWrite(stepperEnable, HIGH); // turn off motor power
     delay(10000); // Give user time to power down Arduino to hold position
