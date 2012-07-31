@@ -183,7 +183,7 @@ void setup(void)
   pinMode(txPin, OUTPUT);
   mySerial.begin(9600);
   mySerial.print("v"); // reset display
-  mySerial.print("z"); // command byte
+  mySerial.print("z"); // command byte for brightness control
   mySerial.write(1); // Set display brightness (1 - 254)
   mySerial.print("w"); // command byte for setting decimals/colon
   mySerial.write(2); // turn on 2nd decimal point
@@ -209,13 +209,13 @@ void setup(void)
   digitalWrite(stepperEnable, HIGH); // turn motor power off  
   currPos = upperPos; // currPos should now equal upperPos
   delay(2000);
-  //  TODO: lower carriage to proper tide height
+  //  Lower carriage to proper height
   // Calculate distance to current tide height
   heightDiff = results - currPos;       // Units of feet.
-  stepVal = (long)(heightDiff / stepConv);
+  stepVal = (long)(heightDiff / stepConv); // convert to motor steps
   if (stepVal < 0) stepVal = -stepVal; // convert negative values
   // If the heightDiff is negative (carriage needs to drop) and the
-  // upperLimitSwitch is activated (carriage is at home), move down
+  // upperLimitSwitch is activated (carriage is at home), move down.
   // This will ignore the case where the current tide height is lower
   // than the programmed lower travel limit. 
   if ( (heightDiff < 0) & (digitalRead(upperLimitSwitch) == LOW)) {
@@ -225,7 +225,7 @@ void setup(void)
       // Set motor direction to move downward
       digitalWrite(stepperDir, LOW);       
       // Run motor the desired number of steps
-      for (int steps = 0; steps < stepVal; steps++) {
+      for (long steps = 0; steps < stepVal; steps++) {
         digitalWrite(stepperStep, HIGH);
         delayMicroseconds(100);
         digitalWrite(stepperStep, LOW);
@@ -240,10 +240,14 @@ void setup(void)
       }
       digitalWrite(stepperEnable, HIGH); // turn motor power off     
   }
+  // Signal that main loop is starting
+  mySerial.write(0x76); // reset position to start
+  mySerial.write("RUn");// spell "Run" on 7-segment display
+  
   Serial.print("Current position: ");
   Serial.print(currPos,2);
   Serial.println(" ft.");
-  delay(2000);
+  delay(5000);
 }  // End of setup loop.
 
 //**************************************************************************
@@ -309,7 +313,7 @@ void loop(void)
       // Set motor direction to move downward
       digitalWrite(stepperDir, LOW);       
       // Run motor the desired number of steps
-      for (int steps = 0; steps < stepVal; steps++) {
+      for (unsigned int steps = 0; steps < stepVal; steps++) {
         digitalWrite(stepperStep, HIGH);
         delayMicroseconds(100);
         digitalWrite(stepperStep, LOW);
@@ -346,7 +350,7 @@ void loop(void)
       // Set motor direction in reverse
       digitalWrite(stepperDir, HIGH);
       // Run motor the desired number of steps
-      for (int steps = 0; steps < stepVal; steps++) {
+      for (unsigned int steps = 0; steps < stepVal; steps++) {
         digitalWrite(stepperStep, HIGH);
         delayMicroseconds(100);
         digitalWrite(stepperStep, LOW);
@@ -470,7 +474,7 @@ void printTime(DateTime now) {
 // decimal point. The converted value (now 2 or 3 digits) is
 // displayed, with the negative sign if necessary.
 void sevenSegDisplay(float result) {
-  mySerial.print("w");
+  mySerial.print("w");  //decimal point control command
   mySerial.write(2); // set 2nd decimal point
   // multiply tide height by 100 to get rid of decimal point
  int noDecimal = (int)(result * 100);
