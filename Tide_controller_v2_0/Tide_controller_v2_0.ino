@@ -208,8 +208,38 @@ void setup(void)
   digitalWrite(highLimitLED, HIGH); // turn on upper limit LED
   digitalWrite(stepperEnable, HIGH); // turn motor power off  
   currPos = upperPos; // currPos should now equal upperPos
+  delay(2000);
   //  TODO: lower carriage to proper tide height
-  
+  // Calculate distance to current tide height
+  heightDiff = results - currPos;       // Units of feet.
+  stepVal = (long)(heightDiff / stepConv);
+  if (stepVal < 0) stepVal = -stepVal; // convert negative values
+  // If the heightDiff is negative (carriage needs to drop) and the
+  // upperLimitSwitch is activated (carriage is at home), move down
+  // This will ignore the case where the current tide height is lower
+  // than the programmed lower travel limit. 
+  if ( (heightDiff < 0) & (digitalRead(upperLimitSwitch) == LOW)) {
+      digitalWrite(highLimitLED, LOW); // turn of upper limit LED
+      digitalWrite(stepperEnable, LOW); // turn motor power on
+      delay(100);      
+      // Set motor direction to move downward
+      digitalWrite(stepperDir, LOW);       
+      // Run motor the desired number of steps
+      for (int steps = 0; steps < stepVal; steps++) {
+        digitalWrite(stepperStep, HIGH);
+        delayMicroseconds(100);
+        digitalWrite(stepperStep, LOW);
+        // check lowerLimitSwitch each step, quit if activated
+        if (digitalRead(lowerLimitSwitch) == LOW)  {
+          // Update current position value
+          currPos = currPos - (steps * stepConv);
+          Serial.println("Hit lower limit switch");
+          digitalWrite(lowLimitLED, HIGH); // turn on lowLimitLED
+          break;  // break out of for loop
+        }
+      }
+      digitalWrite(stepperEnable, HIGH); // turn motor power off     
+  }
   Serial.print("Current position: ");
   Serial.print(currPos,2);
   Serial.println(" ft.");
