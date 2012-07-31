@@ -1,4 +1,4 @@
-/* Tide_controller_v1.9
+/* Tide_controller_v2.0
   Copyright (C) 2012 Luke Miller
  This version is set up to work on a lead-screw driven rack that has
  a limited travel range. There should be a limit switch at each end 
