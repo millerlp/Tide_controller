@@ -7,17 +7,17 @@ Installation:
 
 To simply calculate real-time tide height for a site, install the following:
 
-Copy the RTClib folder into Arduino/libraries/
+1. Copy the RTClib folder into Arduino/libraries/
 
-Copy the folder with the library for your site (i.e. TideMontereyHarborlib) into Arduino/libraries/
+2. Copy the folder with the library for your site (i.e. TideMontereyHarborlib) into Arduino/libraries/
 
-Copy the Tide_calculator or Tide_controller folder (most recent version) into your Arduino folder where 
+3. Copy the Tide_calculator or Tide_controller folder (most recent version) into your Arduino folder where 
 your other sketches are normally stored (not in the libraries folder).
 
-Open the Tide_calculator or Tide_controller sketch in the Arduino IDE, and make sure the correct tide site
+4. Open the Tide_calculator or Tide_controller sketch in the Arduino IDE, and make sure the correct tide site
 library is referenced in the Initial Setup section, near line 55, with a line like:
 
-\#include "TideMontereyHarborlib.h"
+	\#include "TideMontereyHarborlib.h"
 
 Change that library name to match your site's library name. 
 
