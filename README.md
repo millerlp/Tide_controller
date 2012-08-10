@@ -12,7 +12,7 @@ To operate the tide controller rack, install the following:
 
 2. Copy the folder with the library for your site (i.e. TideSanDiegoSanDiegoBaylib) into arduino-1.0.1/libraries/
 
-3. Copy the Tide_controller folder (most recent version) into your Arduino folder where 
+3. Copy the Tide_controller_v2_0 folder (or most recent version) into your Arduino folder where 
 your other sketches are normally stored (not in the arduino-1.0.1/libraries/ folder).
 
 4. Open the Tide_controller sketch in the Arduino IDE, and make sure the correct tide site
@@ -20,22 +20,22 @@ library is referenced in the Initial Setup section, near line 57, with a line li
 
 	\#include "TideSanDiegoSanDiegoBaylib.h"
 
-That line should contain the name of the library for your local site.
+That line should contain the name of the library for your local site that you copied into arduino-1.0.1/libraries/.
 
 Plug the Arduino in to the computer using a USB cable. Upload the program to the Arduino. 
 Open the serial monitor to view the output. See the http://arduino.cc site for help with 
 these steps. 
 
 ------------------------------
-If the real time clock attached to the Arduino is not yet set, you need to set it once
+If the real time clock attached to the Arduino is not yet set, you need to set it one time
 using the RealTimeClock_reset sketch found in the folder of the same name. Upload that
 to the Arduino, and it should automatically reset the real time clock. Make sure your
 computer's clock is set to local Standard Time, not Daylight Savings time (which runs Mar-Nov
 in most places). The tide prediction routine relies on the time being set to local 
 standard time for your site, otherwise you won't get the current tide height out. After running
 the RealTimeClock_reset sketch, before unplugging the Arduino, immediately upload a different 
-sketch to the Arduino so that the clock doesn't try to reset itself repeatedly when the Arduino
-restarts.
+sketch (such as the Tide_controller sketch) to the Arduino so that the clock doesn't try to reset 
+itself repeatedly when the Arduino restarts.
 
 -------------------------------
 If there is no folder containing a tide prediction library for your desired site, it
