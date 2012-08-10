@@ -1,27 +1,30 @@
 Tide_controller
 ===============
 
-Arduino code and associated files for building an aquarium tide height controller.
+Arduino code and associated files for building an aquarium tide height controller. This assumes that you 
+have downloaded and installed the latest version of the Arduino software (1.0.1 or newer).
 
 Installation:
 
-To simply calculate real-time tide height for a site, install the following:
+To operate the tide controller rack, install the following:
 
-1. Copy the RTClib folder into Arduino/libraries/
+1. Copy the RTClib folder into arduino-1.0.1/libraries/
 
-2. Copy the folder with the library for your site (i.e. TideMontereyHarborlib) into Arduino/libraries/
+2. Copy the folder with the library for your site (i.e. TideSanDiegoSanDiegoBaylib) into arduino-1.0.1/libraries/
 
-3. Copy the Tide_calculator or Tide_controller folder (most recent version) into your Arduino folder where 
-your other sketches are normally stored (not in the libraries folder).
+3. Copy the Tide_controller folder (most recent version) into your Arduino folder where 
+your other sketches are normally stored (not in the arduino-1.0.1/libraries/ folder).
 
-4. Open the Tide_calculator or Tide_controller sketch in the Arduino IDE, and make sure the correct tide site
-library is referenced in the Initial Setup section, near line 55, with a line like:
+4. Open the Tide_controller sketch in the Arduino IDE, and make sure the correct tide site
+library is referenced in the Initial Setup section, near line 57, with a line like:
 
-	\#include "TideMontereyHarborlib.h"
+	\#include "TideSanDiegoSanDiegoBaylib.h"
 
-Change that library name to match your site's library name. 
+That line should contain the name of the library for your local site.
 
-Upload the program to the Arduino. Open the serial monitor to view the output. 
+Plug the Arduino in to the computer using a USB cable. Upload the program to the Arduino. 
+Open the serial monitor to view the output. See the http://arduino.cc site for help with 
+these steps. 
 
 ------------------------------
 If the real time clock attached to the Arduino is not yet set, you need to set it once
