@@ -57,6 +57,42 @@ RTC_DS3231 RTC;     // Uncomment this version if you use the new DS3231 clock
 #include "TideSanDiegoSanDiegoBaylib.h"
 TideCalc myTideCalc;  // Create TideCalc object called myTideCalc 
 
+
+//-----------------------------------------------------------------------------
+// ************** HERE IS THE ONLY VALUE YOU NEED TO CHANGE ***************
+// ************** HERE IS THE ONLY VALUE YOU NEED TO CHANGE ***************
+float upperPos = 5.0; // Upper limit, located at upperLimitSwitch. Units = ft.
+// ************** THAT WAS THE ONLY VALUE YOU NEED TO CHANGE ***************
+// ************** THAT WAS THE ONLY VALUE YOU NEED TO CHANGE ***************
+// So what does changing upperPos do? It sets the maximum tide height that you
+// want the tide rack to halt at. Here's an example:
+// If you want to recreate the conditions of a mud flat that
+// sits at 4.5 ft above the zero tide level, you want the tide rack to travel
+// above that height to fully submerge the mud in your tank. We'll round up
+// to 5.0 ft for upperPos, so that any high tide above 4.5ft will submerge the
+// mud in the tank, up to a depth of 6 inches above the mud.
+// (4.5ft + 6 inches = 5.0ft). If the predicted tide goes above 5.0ft, the tide
+// rack will hold at its upper travel limit, leaving the mud submerged until 
+// the tide drops back below the upperPos value. This all assumes that you have
+// set up the tide rack and tank so that the upper travel limit of the tide rack
+// is six inches above the mud level in your tanks. 
+// ----------------------------------------------------------------------------
+// Do not change the value of lowerPos. It is set to accomodate the travel
+// limits of the tide rack, which has roughly 2.75 ft between the upper and 
+// lower travel limits. 
+float lowerPos = upperPos - 2.75; // Lower limit, located at lowerLimitSwitch, units = ft.
+// The value for upperPos is taken to be the "home" position, so when ever the
+// upperLimitSwitch is activated, the motor is at exactly the value of upperPos.
+// In contrast, the value of lowerPos can be less precise, it is just close to 
+// the position of where the lowerLimitSwitch will activate, and is used as a 
+// backup check to make sure the rack doesn't exceed its travel limits. The 
+// lowerLimitSwitch is the main determinant of when the motor stops downward
+// travel. This is mainly to accomodate the use of magnetic switches where the
+// precise position of activation is hard to determine without lots of trial 
+// and error.
+float currPos;  // Current position, within limit switch range.    Units = ft.
+float results;  // results holds the output from the tide calc.    Units = ft.
+
 int currMinute; // Keep track of current minute value in main loop
 
 //****** 7 Segment LED display setup
@@ -75,7 +111,8 @@ SoftwareSerial mySerial = SoftwareSerial(rxPin, txPin);
  per revolution), then microstep mode moves 1/16 of that, 
  (1.8° * 1/16 = 0.1125° per step), or 3200 microsteps per full revolution 
  of the motor. 
- 
+ Finally, there is also an Enable pin that can be used to power down the 
+ Big Easy Driver between moves, minimizing heat production. 
  */
 const byte stepperDir = 8;  // define stepper direction pin. Connect to 
 // Big Easy Driver DIR pin
@@ -84,21 +121,6 @@ const byte stepperStep = 9; // define stepper step pin. Connect to
 const byte stepperEnable = 12; // define motor driver enable pin
 // Connect to Big Easy Driver Enable pin. Pull high to shut off motor
 //*******************************
-
-//-----------------------------------------------------------------------------
-float upperPos = 5.0; // Upper limit, located at upperLimitSwitch. Units = ft.
-float lowerPos = 2.25; // Lower limit, located at lowerLimitSwitch. Units = ft.
-float currPos;  // Current position, within limit switch range.    Units = ft.
-float results;  // results holds the output from the tide calc.    Units = ft.
-// The value for upperPos is taken to be the "home" position, so when ever the
-// upperLimitSwitch is activated, the motor is at exactly the value of upperPos.
-// In contrast, the value of lowerPos can be less precise, it is just close to 
-// the position of where the lowerLimitSwitch will activate, and is used as a 
-// backup check to make sure the motor doesn't exceed its travel limits. The 
-// lowerLimitSwitch is the main determinant of when the motor stops downward
-// travel. This is mainly to accomodate the use of magnetic switches where the
-// precise position of activation is hard to determine without lots of trial 
-// and error.
 
 //-----------------------------------------------------------------------------
 // Conversion factor, feet per motor step
@@ -191,7 +213,7 @@ void setup(void)
   delay(4000);
   
   //************************************
-  // Spin motor to position slide at the home position (at upperLimitSwitch)
+  // Spin motor to position rack at the home position (at upperLimitSwitch)
   // The while loop will continue until the upperLimitSwitch is activated 
   // (i.e. driven LOW). 
   Serial.println("Returning to upper limit");
@@ -208,7 +230,7 @@ void setup(void)
   digitalWrite(highLimitLED, HIGH); // turn on upper limit LED
   digitalWrite(stepperEnable, HIGH); // turn motor power off  
   currPos = upperPos; // currPos should now equal upperPos
-  delay(2000);
+  delay(5000); // pause 5 seconds
   //  Lower carriage to proper height
   // Calculate distance to current tide height
   heightDiff = results - currPos;       // Units of feet.
@@ -407,12 +429,15 @@ void loop(void)
     }
   }    // End of if (now.minute() != currMinute) statement
 
-  // Position override routine
+  // ************* Position override routine ******************
   // Moving the carriage down is a pain to do by hand, so the user
   // can press a button to drive the carriage down with the motor.
   // The program will pause for 10 seconds after the movement, in
   // case the user wants to unplug the power to keep the carriage at
-  // its new position.
+  // its new position. Remember that turning the Arduino off and on
+  // again will cause it to run the motor up to its highest position
+  // during the setup routine, if you want to raise the tide rack 
+  // instead of lower it. 
   if ( (digitalRead(overrideButton) == LOW) & 
     (digitalRead(lowerLimitSwitch) == HIGH) ) {
       digitalWrite(stepperEnable, LOW); // turn on motor power
