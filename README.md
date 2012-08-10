@@ -22,6 +22,12 @@ library is referenced in the Initial Setup section, near line 57, with a line li
 
 That line should contain the name of the library for your local site that you copied into arduino-1.0.1/libraries/.
 
+5. If you want to change the tide range in which the tide rack travels, you can change the
+value for the upperPos on or around line 64, which looks like:
+	float upperPos = 5.0;
+That line represents the upper limit at which the tide rack will stop moving upward, even
+if the predicted tide goes higher. The units of upperPos are feet (not meters or inches). 
+
 Plug the Arduino in to the computer using a USB cable. Upload the program to the Arduino. 
 Open the serial monitor to view the output. See the http://arduino.cc site for help with 
 these steps. 
