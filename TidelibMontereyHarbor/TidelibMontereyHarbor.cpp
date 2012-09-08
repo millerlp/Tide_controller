@@ -1,8 +1,9 @@
-/*  TideMontereyHarborlib.cpp 
+/*  TidelibMontereyHarbor.cpp 
  This source file contains a tide calculation function for the site listed
  below. This file and the associated header file should be placed in the
  Ardiuno/libraries/ directory inside a single folder.
  Luke Miller, June 2012
+ https://github.com/millerlp/Tide_calculator
  Released under the GPL version 3 license.
  The harmonic constituents used here were originally derived from 
  XTide, available at http://www.flaterco.com/xtide/files.html
@@ -13,7 +14,7 @@
 #include <Wire.h>
 #include <avr/pgmspace.h>
 #include "RTClib.h"
-#include "TideMontereyHarborlib.h"
+#include "TidelibMontereyHarbor.h"
 
 unsigned int YearIndx = 0; // Used to index rows in the Equilarg/Nodefactor arrays
 float currHours = 0;          // Elapsed hours since start of year
