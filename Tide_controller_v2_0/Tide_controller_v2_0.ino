@@ -54,7 +54,7 @@ RTC_DS3231 RTC;     // Uncomment this version if you use the new DS3231 clock
 
 // Tide calculation library setup
 //#include "TideMontereyHarborlib.h"
-#include "TideSanDiegoSanDiegoBaylib.h"
+#include "TidelibSanDiegoSanDiegoBay.h"
 TideCalc myTideCalc;  // Create TideCalc object called myTideCalc 
 
 
