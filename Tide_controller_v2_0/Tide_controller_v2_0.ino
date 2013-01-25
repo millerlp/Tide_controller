@@ -241,7 +241,7 @@ void setup(void)
   // This will ignore the case where the current tide height is lower
   // than the programmed lower travel limit. 
   if ( (heightDiff < 0) & (digitalRead(upperLimitSwitch) == LOW)) {
-      digitalWrite(highLimitLED, LOW); // turn of upper limit LED
+      digitalWrite(highLimitLED, LOW); // turn off upper limit LED
       digitalWrite(stepperEnable, LOW); // turn motor power on
       delay(100);      
       // Set motor direction to move downward
