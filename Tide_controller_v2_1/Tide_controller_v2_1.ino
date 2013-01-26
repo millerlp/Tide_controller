@@ -1,12 +1,12 @@
-/* Tide_controller_v2.0
-  Copyright (C) 2012 Luke Miller
+/* Tide_controller_v2.1
+  Copyright (C) 2013 Luke Miller
  This version is set up to work on a lead-screw driven rack that has
  a limited travel range. There should be a limit switch at each end 
  of the rack's travel, and the distance between the values for 
  upperPos and lowerPos must be equal to the distance between those 
  limit switches. Designed to work with daughterboard rev 6. 
  
- Copyright (C) 2012 Luke Miller
+ Copyright (C) 2013 Luke Miller
  
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -25,7 +25,7 @@
  This program is designed to calculate the current tide height
  and control a motor that changes the water level in a tank.
  
- Written under v1.0.1 of the Arduino IDE.
+ Written under v1.0.2 of the Arduino IDE.
  
  The harmonics constants for the tide prediction are taken from 
  the XTide harmonics file. The original harmonics.tcd file is 
