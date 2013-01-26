@@ -120,6 +120,9 @@ const byte stepperStep = 9; // define stepper step pin. Connect to
 // Big Easy Driver STEP pin.
 const byte stepperEnable = 12; // define motor driver enable pin
 // Connect to Big Easy Driver Enable pin. Pull high to shut off motor
+
+const int stepDelay = 1500; // define delay between steps of the motor. This
+// affects the speed at which the motor will turn. Units are microseconds
 //*******************************
 
 //-----------------------------------------------------------------------------
@@ -127,9 +130,13 @@ const byte stepperEnable = 12; // define motor driver enable pin
 // Divide desired travel (in ft.) by this value
 // to calculate the number of steps that
 // must occur.
-const float stepConv = 0.000002604;   // Value for 10 tpi lead screw
+//const float stepConv = 0.000002604;   // Value for 10 tpi lead screw
+const float stepConv = 0.00004165;   // Value for 10 tpi lead screw
 /*  10 tooth-per-inch lead screw = 0.1 inches per revolution
  0.1 inches per rev / 12" = 0.008333 ft per revolution
+ 0.008333 ft per rev / 200 steps per rev = 0.00004165 ft per step
+ Assumes a 200 step per revolution motor being controlled in normal
+ stepping mode (not microstepping).
  0.008333 ft per rev / 3200 steps per rev = 0.000002604 ft per step
  Assumes a 200 step per rev stepper motor being controlled in 1/16th
  microstepping mode ( = 3200 steps per revolution).
@@ -224,7 +231,7 @@ void setup(void)
     digitalWrite(stepperDir, HIGH);
     // Move stepper a single step
     digitalWrite(stepperStep, HIGH);
-    delayMicroseconds(100);
+    delayMicroseconds(stepDelay);
     digitalWrite(stepperStep, LOW);
   }
   digitalWrite(highLimitLED, HIGH); // turn on upper limit LED
@@ -252,7 +259,7 @@ void setup(void)
       // Run motor the desired number of steps
       for (long steps = 0; steps < stepVal; steps++) {
         digitalWrite(stepperStep, HIGH);
-        delayMicroseconds(100);
+        delayMicroseconds(stepDelay);
         digitalWrite(stepperStep, LOW);
         // check lowerLimitSwitch each step, quit if activated
         if (digitalRead(lowerLimitSwitch) == LOW)  {
@@ -348,7 +355,7 @@ void loop(void)
       // Run motor the desired number of steps
       for (unsigned int steps = 0; steps < stepVal; steps++) {
         digitalWrite(stepperStep, HIGH);
-        delayMicroseconds(100);
+        delayMicroseconds(stepDelay);
         digitalWrite(stepperStep, LOW);
         // check lowerLimitSwitch each step, quit if it is activated
         if (digitalRead(lowerLimitSwitch) == LOW) {
@@ -385,7 +392,7 @@ void loop(void)
       // Run motor the desired number of steps
       for (unsigned int steps = 0; steps < stepVal; steps++) {
         digitalWrite(stepperStep, HIGH);
-        delayMicroseconds(100);
+        delayMicroseconds(stepDelay);
         digitalWrite(stepperStep, LOW);
         // check upperLimitSwitch each step, quit if it is activated
         if (digitalRead(upperLimitSwitch) == LOW) {
@@ -452,9 +459,10 @@ void loop(void)
     while( (digitalRead(overrideButton) == LOW) & 
       (digitalRead(lowerLimitSwitch) == HIGH)) {
         // go through 2400 steps = 0.75 revolutions = 0.075 inches = .00625ft
-      for (int steps = 0; steps <= 2399; steps++) {
+        // go through 150 steps = 0.75 revolutions = 0.075 inches = .00625ft
+      for (int steps = 0; steps <= 150; steps++) {
         digitalWrite(stepperStep, HIGH);
-        delayMicroseconds(100);
+        delayMicroseconds(stepDelay);
         digitalWrite(stepperStep, LOW);
       }
       // Update currPos to reflect new position
