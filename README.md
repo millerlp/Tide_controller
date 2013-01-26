@@ -8,12 +8,12 @@ Installation:
 
 To operate the tide controller rack, install the following:
 
-1. Copy the RTClib folder into arduino-1.0.1/libraries/
+1. Copy the RTClib folder into your Arduino file folder inside a folder called 'libraries'. If there is not already a libraries directory, create it now.
 
-2. Copy the folder with the library for your site (i.e. TidelibSanDiegoSanDiegoBay) into arduino-1.0.1/libraries/
+2. Copy the folder with the tide library for your site (i.e. TidelibSanDiegoSanDiegoBay) into Arduino/libraries/
 
 3. Copy the Tide_controller_v2_0 folder (or most recent version) into your Arduino folder where 
-your other sketches are normally stored (not in the arduino-1.0.1/libraries/ folder).
+your other sketches are normally stored. 
 
 4. Open the Tide_controller sketch in the Arduino IDE, and make sure the correct tide site
 library is referenced in the Initial Setup section, near line 57, with a line like:
