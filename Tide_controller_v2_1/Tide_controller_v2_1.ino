@@ -121,7 +121,7 @@ const byte stepperStep = 9; // define stepper step pin. Connect to
 const byte stepperEnable = 12; // define motor driver enable pin
 // Connect to Big Easy Driver Enable pin. Pull high to shut off motor
 
-const int stepDelay = 1500; // define delay between steps of the motor. This
+const int stepDelay = 2000; // define delay between steps of the motor. This
 // affects the speed at which the motor will turn. Units are microseconds
 //*******************************
 
