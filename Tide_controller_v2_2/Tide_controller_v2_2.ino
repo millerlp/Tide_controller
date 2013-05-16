@@ -62,7 +62,7 @@ TideCalc myTideCalc;  // Create TideCalc object called myTideCalc
 //-----------------------------------------------------------------------------
 // ************** HERE IS THE ONLY VALUE YOU NEED TO CHANGE ***************
 // ************** HERE IS THE ONLY VALUE YOU NEED TO CHANGE ***************
-float upperPos = 5.0; // Upper limit, located at upperLimitSwitch. Units = ft.
+float upperPos = 6.5; // Upper limit, located at upperLimitSwitch. Units = ft.
 // ************** THAT WAS THE ONLY VALUE YOU NEED TO CHANGE ***************
 // ************** THAT WAS THE ONLY VALUE YOU NEED TO CHANGE ***************
 // So what does changing upperPos do? It sets the maximum tide height that you
