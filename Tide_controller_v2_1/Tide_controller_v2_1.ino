@@ -123,6 +123,8 @@ const byte stepperEnable = 12; // define motor driver enable pin
 
 const int stepDelay = 200; // define delay between steps of the motor. This
 // affects the speed at which the motor will turn. Units are microseconds
+// For microstepping 1/16 steps, use a value around 200. For full step mode,
+// the delay needs to be lengthened to around 5000. 
 //*******************************
 
 //-----------------------------------------------------------------------------
