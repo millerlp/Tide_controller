@@ -12,7 +12,7 @@ To operate the tide controller rack, install the following:
 
 2. Copy the folder with the tide library for your site (i.e. TidelibSanDiegoSanDiegoBay) into Arduino/libraries/
 
-3. Copy the Tide_controller_v2_0 folder (or most recent version) into your Arduino folder where 
+3. Copy the Tide_controller_v2_3 folder (or most recent version) into your Arduino folder where 
 your other sketches are normally stored. 
 
 4. Open the Tide_controller sketch in the Arduino IDE, and make sure the correct tide site
@@ -20,7 +20,7 @@ library is referenced in the Initial Setup section, near line 57, with a line li
 
 	\#include "TidelibSanDiegoSanDiegoBay.h"
 
-That line should contain the name of the library for your local site that you copied into arduino-1.0.1/libraries/.
+That line should contain the name of the library for your local site that you copied into Arduino/libraries/.
 
 5. If you want to change the tide range in which the tide rack travels, you can change the
 value for the upperPos on or around line 64, which looks like:
