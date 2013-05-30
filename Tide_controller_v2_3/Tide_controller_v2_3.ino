@@ -245,6 +245,10 @@ void setup(void)
   //  Lower carriage to proper height
   // Calculate distance to current tide height
   heightDiff = results - currPos;       // Units of feet.
+  Serial.print("Current tide: ");
+  Serial.print(results);
+  Serial.println(" ft.");
+  Serial.println(heightDiff);
   stepVal = (long)(heightDiff / stepConv); // convert to motor steps
   if (stepVal < 0) stepVal = -stepVal; // convert negative values
   // If the heightDiff is negative (carriage needs to drop) and the
@@ -252,6 +256,7 @@ void setup(void)
   // This will ignore the case where the current tide height is lower
   // than the programmed lower travel limit. 
   if ( (heightDiff < 0) & (digitalRead(upperLimitSwitch) == LOW)) {
+      Serial.println("Lowering...");
       digitalWrite(highLimitLED, LOW); // turn off upper limit LED
       digitalWrite(stepperEnable, LOW); // turn motor power on
       delay(100);      
@@ -383,10 +388,10 @@ void loop(void)
     // ************Raise water level to new position******************
     // If the heightDiff is positive, AND the target level is greater 
     // than the lowerPos limit, AND the target level is less than the 
-    // upperPos limit (plus a 0.2 ft buffer), AND the upperLimitSwitch 
+    // upperPos limit (plus a 0.1 ft buffer), AND the upperLimitSwitch 
     // hasn't been activated, then the motor can be moved.
     else if ( (heightDiff > 0) & (results > lowerPos) & 
-      (results < (upperPos + 0.2)) & (digitalRead(upperLimitSwitch) == HIGH) )
+      (results < (upperPos + 0.1)) & (digitalRead(upperLimitSwitch) == HIGH) )
     {
       digitalWrite(stepperEnable, LOW); // turn on motor power
       delay(100);      
