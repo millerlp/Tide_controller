@@ -116,11 +116,12 @@ SoftwareSerial mySerial = SoftwareSerial(rxPin, txPin);
  Big Easy Driver between moves, minimizing heat production. 
  */
 const byte stepperDir = 8;  // define stepper direction pin. Connect to 
-// Big Easy Driver DIR pin
+// CW230 CW+ pin
 const byte stepperStep = 9; // define stepper step pin. Connect to 
-// Big Easy Driver STEP pin.
+// CW230 CP+ pin
 const byte stepperEnable = 12; // define motor driver enable pin
-// Connect to Big Easy Driver Enable pin. Pull high to shut off motor
+// Connect to CW230 REST+ pin. Pull high to shut off motor
+// The CW230 pins REST-, CP-, and CW- should all be attached to Arduino ground.
 
 const int stepDelay = 120; // define delay between steps of the motor. This
 // affects the speed at which the motor will turn. Units are microseconds
