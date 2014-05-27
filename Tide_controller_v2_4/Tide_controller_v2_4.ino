@@ -1,5 +1,5 @@
-/* Tide_controller_v2.3
-  Copyright (C) 2013 Luke Miller
+/* Tide_controller_v2.4
+  Copyright (C) 2014 Luke Miller
  This version is set up to work on a lead-screw driven rack that has
  a limited travel range. There should be a limit switch at each end 
  of the rack's travel, and the distance between the values for 
@@ -7,7 +7,7 @@
  limit switches. Designed to work with daughterboard rev 8 and the
  CW230 stepper driver, 36V power supply, and 57BYGH405A stepper motor.
  
- Copyright (C) 2013 Luke Miller
+ Copyright (C) 2014 Luke Miller
  
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
  This program is designed to calculate the current tide height
  and control a motor that changes the water level in a tank.
  
- Written under v1.0.2 of the Arduino IDE.
+ Written under v1.0.5 of the Arduino IDE.
  
  The harmonics constants for the tide prediction are taken from 
  the XTide harmonics file. The original harmonics.tcd file is 
@@ -112,6 +112,10 @@ SoftwareSerial mySerial = SoftwareSerial(rxPin, txPin);
   and heat). 
   The other CW230 pins REST-, CP- and CW- should all be tied to the
   Arduino's ground. 
+  The CW230 uses tiny DIP switches to set the microstepping mode. For
+  1/16th microsteps, switches 1 + 2 need to be flipped up (opposite the
+  arrow on the switch panel), while switch 3 needs be flipped down (same
+  as the arrow direction on the switch panel). 
  */
 const byte stepperDir = 8;  // define stepper direction pin. Connect to 
 // CW230 CW+ pin
