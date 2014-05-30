@@ -450,6 +450,13 @@ void loop(void)
     if (results < lowerPos) {
       digitalWrite(lowLimitLED, HIGH); // turn LED on
     }
+	
+	// Update the 7-seg display after moving. This will briefly show
+	// the year, month, date, and then time in succession, followed by
+	// going back to the current tide height. 
+	sevenSegDisplayTime(now); // function to print date + time to 7-seg display
+	sevenSegDisplay(results); // function to print result to 7-segment display
+	
   }    // End of if (now.minute() != currMinute) statement
 
   // ************* Position override routine ******************
@@ -521,6 +528,48 @@ void printTime(DateTime now) {
   }
 }
 //********************************************************
+// sevenSegDisplayTime function
+// A function to show the year, month, day and time on 
+// the Sparkfun serial 7-segment LED display. 
+// https://www.sparkfun.com/products/11442 
+
+void sevenSegDisplayTime(DateTime now){
+	mySerial.write(0x76); // clear display
+	mySerial.write(now.year()); //write year
+	delay(1000);
+	mySerial.write(0x76); // clear display
+	mySerial.write(now.month()); // write month
+	delay(1000);
+	mySerial.write(0x76); // clear display
+	if (now.day() < 10) {
+		mySerial.write(0x79); // send Move Cursor Command
+		mySerial.write(0x03); // position cursor at 4th digit
+		mySerial.write(now.day());
+	} else {
+		mySerial.write(0x79); // send Move Cursor Command
+		mySerial.write(0x02); // position cursor at 3rd digit
+		mySerial.write(now.day()); // write day
+	}
+	delay(1000);
+	mySerial.write(0x76); // clear display
+	mySerial.write(0x77); // command byte
+	mySerial.write(0x08); // turn on colon
+	if (now.hour < 10) {
+		mySerial.write(0x79); // send Move Cursor Command
+		mySerial.write(0x01); // position cursor at 2nd digit
+		mySerial.write(now.hour()); // print hour
+	} else {
+		mySerial.write(now.hour()); // print hour
+	}
+	mySerial.write(now.hour()); // display hour
+	if (now.minute < 10) { // for minute values less than 10
+		mySerial.write(0x00); // print a zero
+		mySerial.write(now.minute()); // print minute value
+	} else {
+		mySerial.write(now.minute()); // print minute value
+	}
+	delay(2000);
+}
 
 //********************************************************
 // Function to print tide height to 7-segment 4-digit display
