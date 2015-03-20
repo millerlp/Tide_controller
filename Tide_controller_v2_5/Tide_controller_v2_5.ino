@@ -216,8 +216,10 @@ void setup(void)
   mySerial.print("v"); // reset display
   mySerial.print("z"); // command byte for brightness control
   mySerial.write(1); // Set display brightness (1 - 254)
-  mySerial.print("w"); // command byte for setting decimals/colon
-  mySerial.write(2); // turn on 2nd decimal point
+	// Update the 7-seg LED display. This will briefly show
+	// the year, month, date, and then time in succession, followed by
+	// going back to the current tide height. 
+  sevenSegDisplayTime(now); // function to print date + time to 7-seg display
   sevenSegDisplay(results); // function to print result to 7-segment display
   delay(4000);
   
