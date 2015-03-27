@@ -2,7 +2,7 @@ Tide_controller
 ===============
 
 Arduino code and associated files for building an aquarium tide height controller. This assumes that you 
-have downloaded and installed the latest version of the Arduino software (1.0.1 or newer).
+have downloaded and installed the latest version of the Arduino software (v1.0.6 or v1.6.1, or newer).
 
 Installation:
 
@@ -12,7 +12,7 @@ To operate the tide controller rack, install the following:
 
 2. Copy the folder with the tide library for your site (i.e. TidelibSanDiegoSanDiegoBay) into Arduino/libraries/
 
-3. Copy the Tide_controller_v2_3 folder (or most recent version) into your Arduino folder where 
+3. Copy the Tide_controller_v2_5 folder (or most recent version) into your Arduino folder where 
 your other sketches are normally stored. 
 
 4. Open the Tide_controller sketch in the Arduino IDE, and make sure the correct tide site
