@@ -20,12 +20,17 @@
 load('Harmonics_20120302.Rdata')
 
 # Specify a search string that will hopefully only return a single station
+# Find the name for your site by looking through the XTide website 
+# http://www.flaterco.com/xtide/locations.html
+
 #stationID = 'San Diego, San Diego Bay'
-#stationID = 'Monterey Harbor'
-#stationID = 'San Francisco'
+stationID = 'Monterey Harbor'
+#stationID = 'Pier 41, San Francisco'
 #stationID = 'Port San Luis'
 #stationID = 'Los Angeles'
-stationID = 'Friday Harbor'
+#stationID = 'Friday Harbor'
+#stationID = 'Charleston, Cooper River Entrance, South Carolina' # GMToffset = 5
+
 
 GMToffset = 8 # Time zone correction for the site's local standard time zone
 			  # relative to Greenwich Mean Time. 
@@ -34,6 +39,10 @@ GMToffset = 8 # Time zone correction for the site's local standard time zone
 			  # savings time zone (March thru November). 
 # Find row index of the desired station in the harms list
 stInd = grep(stationID, harms$station)
+
+if (length(stInd) < 1) {
+	cat('\a No matching site found\n')
+}
 
 # If there are multiple matches to the stationID given, have the user
 # choose the appropriate station.
@@ -136,8 +145,8 @@ cat('/* ', libnamecpp, '\n')
 cat(' This source file contains a tide calculation function for the site listed\n')
 cat(' below. This file and the associated header file should be placed in the\n')
 cat(' Ardiuno/libraries/ directory inside a single folder.\n')
-cat(' Luke Miller, June 2012\n')
-cat(' https://github.com/millerlp/Tide_calculator\n')
+cat(' Luke Miller, Sep 2012\n')
+cat(' http://github.com/millerlp/Tide_calculator\n')
 cat(' Released under the GPL version 3 license.\n')
 cat(' The harmonic constituents used here were originally derived from \n')
 cat(' XTide, available at http://www.flaterco.com/xtide/files.html\n')
@@ -167,8 +176,8 @@ cat('put new site values in here by hand.\n')
 cat('The Speed, Equilarg and Nodefactor arrays can all stay the same for any site.\n')
 cat('*/\n\n')
 
-cat('// Selected station: ', harms1$station,'\n')
-cat('char stationID[] = "', harms1$station,'";\n')
+cat('// Selected station: ', harms1$station, '\n', sep = '')
+cat('char stationID[] = "', harms1$station, '";\n', sep = '')
 cat("// The 'datum' printed here is the difference between mean sea level and \n") 
 cat("// mean lower low water for the NOAA station. These two values can be \n") 
 cat("// found for NOAA tide reference stations on the tidesandcurrents.noaa.gov\n")
@@ -179,21 +188,21 @@ cat(harms1$name, sep = ', ')
 cat('\n')
 cat("// These names match the NOAA names, except LDA2 here is LAM2 on NOAA's site\n")
 cat("typedef float PROGMEM prog_float_t; // Need to define this type before use\n")
-cat('PROGMEM prog_float_t Amp[] = {')
+cat('const prog_float_t Amp[] PROGMEM = {')
 cat(harms1$A, sep = ',')
 cat('};\n')
-cat('PROGMEM prog_float_t Kappa[] = {')
+cat('const prog_float_t Kappa[] PROGMEM = {')
 cat(harms1$kappa, sep = ',')
 cat('};\n')
 
-cat('PROGMEM prog_float_t Speed[] = {')
+cat('const prog_float_t Speed[] PROGMEM = {')
 cat(harms1$speed, sep = ',')
 cat('};\n')
 
 ## Create code for a 4 year x 37 constituent array
-cat('PROGMEM prog_float_t Equilarg[')
+cat('const prog_float_t Equilarg[')
 cat(keep.years)
-cat('][37] = { \n')
+cat('][37] PROGMEM = { \n')
 for (i in 1:(ncol(harms1$equilarg)-1)) {
 	cat('{')
 	cat(harms1$equilarg[, i], sep = ',')
@@ -204,9 +213,9 @@ cat(harms1$equilarg[ ,ncol(harms1$equilarg)], sep = ',')
 cat('} \n };\n')
 cat('\n')
 
-cat('PROGMEM prog_float_t Nodefactor[')
+cat('const prog_float_t Nodefactor[')
 cat(keep.years)
-cat('][37] = { \n')
+cat('][37] PROGMEM = { \n')
 for (i in 1:(ncol(harms1$nodefactor)-1)) {
 	cat('{')
 	cat(harms1$nodefactor[, i], sep = ',')
@@ -221,7 +230,7 @@ cat('// Define unix time values for the start of each year.\n')
 cat('//                                      ')
 cat(yr.start, sep = '       ')
 cat('\n')
-cat('PROGMEM prog_uint32_t startSecs[] = {')
+cat('const unsigned long startSecs[] PROGMEM = {')
 cat(yr.unix, sep = ',')
 cat('};\n\n')
 
@@ -307,7 +316,7 @@ cat('This code calculates the current tide height for the \n')
 cat('pre-programmed site. It requires a real time clock\n')
 cat('(DS1307 or DS3231 chips) to generate a time for the calculation.\n')
 cat('The site is set by the name of the included library (see line 44 below)\n\n')
-cat('Written under version 1.0.1 of the Arduino IDE.\n\n')
+cat('Written under version 1.0.6 and 1.6.1 of the Arduino IDE.\n\n')
 cat('This program is free software: you can redistribute it and/or modify\n')
 cat('it under the terms of the GNU General Public License as published by\n')
 cat('the Free Software Foundation, either version 3 of the License, or \n')
