@@ -103,7 +103,7 @@ void sevenSegDisplayTime(DateTime now){
 	mySerial.write(0x76); // clear display
 	mySerial.write(0x77); // Decimal Control command byte
 	mySerial.write(0x08); // turn on colon
-	if (now.hour < 10) {
+	if (now.hour() < 10) {
 		mySerial.write(0x79); // send Move Cursor Command
 		mySerial.write(0x01); // position cursor at 2nd digit
 		mySerial.write(now.hour()); // print hour
@@ -111,7 +111,7 @@ void sevenSegDisplayTime(DateTime now){
 		mySerial.write(now.hour()); // print hour
 	}
 	mySerial.write(now.hour()); // display hour
-	if (now.minute < 10) { // for minute values less than 10
+	if (now.minute() < 10) { // for minute values less than 10
 		mySerial.write(0x00); // print a zero
 		mySerial.write(now.minute()); // print minute value
 	} else {
