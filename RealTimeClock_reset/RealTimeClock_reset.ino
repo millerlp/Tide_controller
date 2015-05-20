@@ -112,7 +112,7 @@ void sevenSegDisplayTime(DateTime now){
 	}
 	mySerial.write(now.hour()); // display hour
 	if (now.minute() < 10) { // for minute values less than 10
-		mySerial.write(0x00); // print a zero
+		mySerial.write(0x48); // print a zero
 		mySerial.write(now.minute()); // print minute value
 	} else {
 		mySerial.write(now.minute()); // print minute value
