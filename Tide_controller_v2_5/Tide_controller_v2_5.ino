@@ -27,6 +27,7 @@
  and control a motor that changes the water level in a tank.
  
  Written under v1.0.5 of the Arduino IDE.
+ Updated to work under v1.6.4, with some compile warnings. 
  
  The harmonics constants for the tide prediction are taken from 
  the XTide harmonics file. The original harmonics.tcd file is 
@@ -47,7 +48,7 @@
 // Header files for talking to real time clock
 #include <Wire.h>
 #include <SPI.h>  // Required for RTClib to compile properly
-#include <RTClib.h> // From https://github.com/MrAlvin/RTClib
+#include <RTClib.h> // From https://github.com/millerlp/RTClib
 #include <SoftwareSerial.h>
 // Real Time Clock setup
 RTC_DS3231 RTC;     // Uncomment this version if you use the new DS3231 clock 
