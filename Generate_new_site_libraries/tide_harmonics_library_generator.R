@@ -17,19 +17,17 @@
 # subordinate stations you'll still need to first generate predictions for the 
 # local reference station (contained in this data set) and apply your 
 # corrections afterwards.
-load('Harmonics_20120302.Rdata')
+load('Harmonics_20141224.Rdata')
 
 # Specify a search string that will hopefully only return a single station
-# Find the name for your site by looking through the XTide website 
-# http://www.flaterco.com/xtide/locations.html
-
 #stationID = 'San Diego, San Diego Bay'
+#stationID = 'La Jolla'
 stationID = 'Monterey Harbor'
 #stationID = 'Pier 41, San Francisco'
 #stationID = 'Port San Luis'
 #stationID = 'Los Angeles'
 #stationID = 'Friday Harbor'
-#stationID = 'Charleston, Cooper River Entrance, South Carolina' # GMToffset = 5
+#stationID = 'Charleston, Cooper River Entrance, South Carolina'
 
 
 GMToffset = 8 # Time zone correction for the site's local standard time zone
@@ -57,9 +55,10 @@ if (length(stInd) > 1) {
 	cat(harms$station[stInd[newstInd]],'\n')
 }
 
-#Remove spaces from station ID so it can be used as a library name
+# Remove spaces and other weird characters from station ID so it can be used as 
+# a library name
 libname = gsub('[ ]', '', stationID)
-libname = gsub('[,]', '', libname)
+libname = gsub('[,()&.\\]', '', libname)
 
 
 # If the user had to choose a station from the list, extract part of the
@@ -89,7 +88,7 @@ year.ind = curr.year - harms$startyear + 1
 # The maximum number of years to hold is a function of the available program 
 # memory space on the microcontroller (Arduino 328P = 30 kb). Ten years of data
 # will consume roughly 10 kb in a minimal example sketch. 
-keep.years = 10
+keep.years = 24
 
 # Extract the useful bits from the harms list, keeping only data for the 
 # desired tide station.
@@ -107,6 +106,7 @@ harms1 = list(name = harms$name[1:37],
 		equilarg = harms$equilarg[1:37, year.ind:(year.ind+keep.years-1)],
 		nodefactor = harms$nodefactor[1:37, year.ind:(year.ind+keep.years-1)],
 		station = harms$station[stInd],
+		stationIDnumber = harms$stationIDnumber[stInd],
 		units = harms$units[stInd],
 		longitude = harms$longitude[stInd],
 		latitude = harms$latitude[stInd],
@@ -145,18 +145,24 @@ cat('/* ', libnamecpp, '\n')
 cat(' This source file contains a tide calculation function for the site listed\n')
 cat(' below. This file and the associated header file should be placed in the\n')
 cat(' Ardiuno/libraries/ directory inside a single folder.\n')
-cat(' Luke Miller, Sep 2012\n')
+cat(' Luke Miller, ')
+cat(strftime(curr.date, format = '%Y-%m-%d'),'\n')
 cat(' http://github.com/millerlp/Tide_calculator\n')
 cat(' Released under the GPL version 3 license.\n')
+cat(' Compiled for Arduino v1.6.4 circa 2015\n\n')
 cat(' The harmonic constituents used here were originally derived from \n')
-cat(' XTide, available at http://www.flaterco.com/xtide/files.html\n')
+cat(' the Center for Operational Oceanic Products and Services (CO-OPS),\n')
+cat(' National Ocean Service (NOS), National Oceanic and Atmospheric \n')
+cat(' Administration, U.S.A.\n')
+cat(' The data were originally processed by David Flater for use with XTide,\n')
+cat(' available at http://www.flaterco.com/xtide/files.html\n')
 cat(' The predictions from this program should not be used for navigation\n')
 cat(' and no accuracy or warranty is given or implied for these tide predictions.\n')
 cat(' */\n')
 cat('#include <Arduino.h>\n')
 cat('#include <Wire.h>\n')
 cat('#include <avr/pgmspace.h>\n')
-cat('#include "RTClib.h"\n')
+cat('#include "RTClib.h" // https://github.com/millerlp/RTClib\n')
 cat('#include "', libnameh,'"\n\n', sep = '')
 cat('unsigned int YearIndx = 0; // Used to index rows in the Equilarg/Nodefactor arrays\n')
 cat('float currHours = 0;          // Elapsed hours since start of year\n')
@@ -178,6 +184,8 @@ cat('*/\n\n')
 
 cat('// Selected station: ', harms1$station, '\n', sep = '')
 cat('char stationID[] = "', harms1$station, '";\n', sep = '')
+cat('// Selection station ID number: ', harms1$stationIDnumber,'\n',sep='')
+cat('const long stationIDnumber = ', harms1$stationIDnumber, ';\n', sep = '')
 cat("// The 'datum' printed here is the difference between mean sea level and \n") 
 cat("// mean lower low water for the NOAA station. These two values can be \n") 
 cat("// found for NOAA tide reference stations on the tidesandcurrents.noaa.gov\n")
@@ -188,13 +196,16 @@ cat(harms1$name, sep = ', ')
 cat('\n')
 cat("// These names match the NOAA names, except LDA2 here is LAM2 on NOAA's site\n")
 cat("typedef float PROGMEM prog_float_t; // Need to define this type before use\n")
+cat("// Amp is the amplitude of each of the harmonic constituents for this site\n")
 cat('const prog_float_t Amp[] PROGMEM = {')
 cat(harms1$A, sep = ',')
 cat('};\n')
+cat("// Kappa is the 'modified' or 'adapted' phase lag (Epoch) of each of the \n")
+cat("// harmonic constituents for this site.\n")
 cat('const prog_float_t Kappa[] PROGMEM = {')
 cat(harms1$kappa, sep = ',')
 cat('};\n')
-
+cat("// Speed is the frequency of the constituent, denoted as little 'a' by Hicks 2006\n")
 cat('const prog_float_t Speed[] PROGMEM = {')
 cat(harms1$speed, sep = ',')
 cat('};\n')
@@ -246,6 +257,10 @@ cat('// Return tide station name\n')
 cat('char* TideCalc::returnStationID(void){\n')
 cat('    return stationID;\n')
 cat('}\n\n')
+cat('// Return NOAA tide station ID number\n')
+cat('long TideCalc::returnStationIDnumber(void){\n')
+cat('    return stationIDnumber;\n')
+cat('}\n\n')
 cat('// currentTide calculation function, takes a DateTime object from real time clock\n')
 cat('float TideCalc::currentTide(DateTime now) {\n')
 cat('	// Calculate difference between current year and starting year.\n')	
@@ -257,6 +272,9 @@ cat('   currHours = currHours + adjustGMT;\n')
 cat('   // *****************Calculate current tide height*************\n')
 cat('   tideHeight = Datum; // initialize results variable, units of feet.\n')
 cat('   for (int harms = 0; harms < 37; harms++) {\n')
+cat('       // Step through each harmonic constituent, extract the relevant\n')
+cat('       // values of Nodefactor, Amplitude, Equilibrium argument, Kappa\n')
+cat('       // and Speed.\n')
 cat('       currNodefactor = pgm_read_float_near(&Nodefactor[YearIndx][harms]);\n')
 cat(' 		currAmp = pgm_read_float_near(&Amp[harms]);\n')
 cat('       currEquilarg = pgm_read_float_near(&Equilarg[YearIndx][harms]);\n')
@@ -279,9 +297,22 @@ sink(file = paste(libdirname,libnameh,sep = '/'), type = 'output',
 		split = TRUE, append = FALSE)
 cat('/* ', libnameh,'\n')
 cat('  A library for calculating the current tide height at \n')
-cat('  ', harms1$station, '\n')
-cat('  Luke Miller, June 2012\n')
+cat('  ', harms1$station, ', NOAA station ID number ', harms1$stationIDnumber,'\n')
+cat('  Luke Miller, ')
+cat(strftime(curr.date, format = '%Y-%m-%d'),'\n')
+cat('  Compiled under Arduino 1.6.4\n')
 cat('  https://github.com/millerlp/Tide_calculator\n')
+cat(' Released under the GPL version 3 license.\n')
+cat(' The harmonic constituents used here were originally derived from \n')
+cat(' the Center for Operational Oceanic Products and Services (CO-OPS),\n')
+cat(' National Ocean Service (NOS), National Oceanic and Atmospheric \n')
+cat(' Administration, U.S.A.\n')
+cat(' The data were originally processed by David Flater for use with XTide,\n')
+cat(' available at http://www.flaterco.com/xtide/files.html\n')
+cat(' The predictions from this program should not be used for navigation\n')
+cat(' and no accuracy or warranty is given or implied for these tide predictions.\n')
+cat(' It is highly recommended that you verify the output of these predictions\n')
+cat(' against the relevant NOAA tide predictions online.\n')
 cat('*/ \n \n')
 libnameh2 = paste(libname, '_h', sep = '')
 cat('#ifndef ', libnameh2, '\n')
@@ -289,12 +320,16 @@ cat('#define ', libnameh2, '\n')
 cat('#include <Arduino.h>\n')
 cat('#include <avr/pgmspace.h>\n')
 cat('#include <Wire.h>\n')
-cat('#include "RTClib.h"\n\n')
+cat('#include "RTClib.h" // https://github.com/millerlp/RTClib\n\n')
 cat('class TideCalc {\n')
 cat(' public:\n')
 cat('	 TideCalc();\n')
-cat('    float currentTide(DateTime now);\n')
-cat('    char* returnStationID(void);\n')
+cat('    float currentTide(DateTime now); // returns predicted tide for\n')
+cat('    // the supplied date and time. The time should always be given in\n')
+cat('    // the local standard time for the site, not daylight savings time\n')
+cat('    // output units = feet\n')
+cat('    char* returnStationID(void); // NOAA station name\n')
+cat('    long returnStationIDnumber(void); // NOAA station ID number\n')
 cat('};\n')
 cat('#endif')
 sink()
@@ -311,12 +346,14 @@ sink() # Close keywords.txt file
 sink(file = paste(libdirname,'/examples/Tide_calculator/',libexample,sep = ''), 
 		type = 'output', split = TRUE, append = FALSE)
 cat('/* ', libexample, '\n')
-cat(' Copyright (c) 2012 Luke Miller\n')
+cat(' Copyright (c) ')
+cat(strftime(curr.date, format = '%Y'))
+cat(' Luke Miller\n')
 cat('This code calculates the current tide height for the \n')
 cat('pre-programmed site. It requires a real time clock\n')
 cat('(DS1307 or DS3231 chips) to generate a time for the calculation.\n')
 cat('The site is set by the name of the included library (see line 44 below)\n\n')
-cat('Written under version 1.0.6 and 1.6.1 of the Arduino IDE.\n\n')
+cat('Written under version 1.6.4 of the Arduino IDE.\n\n')
 cat('This program is free software: you can redistribute it and/or modify\n')
 cat('it under the terms of the GNU General Public License as published by\n')
 cat('the Free Software Foundation, either version 3 of the License, or \n')
@@ -327,14 +364,18 @@ cat('MERCHANTIBILITY or FITNESS FOR A PARTICULAR PURPOSE. See the\n')
 cat('GNU General Public License for more details.\n\n')
 cat('You should have received a copy of the GNU General Public License\n')
 cat('along with this program. If not, see http://www.gnu.org/licenses/\n\n')
-cat('The harmonic constants for the tide prediction are taken from the\n')
-cat('XTide harmonics file, developed by David Flater. The original \n')
-cat('harmonics.tcd file is available at\n')
-cat('http://www.flaterco.com/xtide/files.html\n')
+cat(' The harmonic constituents used here were originally derived from \n')
+cat(' the Center for Operational Oceanic Products and Services (CO-OPS),\n')
+cat(' National Ocean Service (NOS), National Oceanic and Atmospheric \n')
+cat(' Administration, U.S.A.\n')
+cat(' The data were originally processed by David Flater for use with XTide,\n')
+cat(' available at http://www.flaterco.com/xtide/files.html\n')
 cat('As with XTide, the predictions generated by this program should \n')
 cat('NOT be used for navigation, and no accuracy or warranty is given\n')
 cat('or implied for these tide predictions. The chances are pretty good\n')
 cat('that the tide predictions generated here are completely wrong.\n')
+cat('It is highly recommended that you verify the output of these predictions\n')
+cat('against the relevant NOAA tide predictions online.\n')
 cat('*/ \n')
 cat('//--------------------------------------------------------------\n')
 cat('//Initial setup\n')
@@ -365,7 +406,17 @@ cat('  DateTime now = RTC.now(); // Get current time from clock\n')
 cat('  currMinute = now.minute(); // Store current minute value\n')
 cat('  printTime(now);  // Call printTime function to print date/time to serial\n')
 cat('  Serial.println("Calculating tides for: ");\n')
-cat('  Serial.println(myTideCalc.returnStationID());\n')
+cat('  Serial.print(myTideCalc.returnStationID());\n')
+cat('  Serial.print(" ");\n')
+cat('  Serial.println(myTideCalc.returnStationIDnumber());\n\n')
+cat('  // Calculate new tide height based on current time\n')
+cat('  results = myTideCalc.currentTide(now);\n\n')
+cat('  //*****************************************\n')
+cat('  // For debugging\n')
+cat('  Serial.print("Tide height: ");\n')
+cat('  Serial.print(results, 3);\n')
+cat('  Serial.println(" ft.");\n')
+cat('  Serial.println(); // blank line\n\n')
 cat('  delay(2000);\n')
 cat('}  // End of setup loop\n\n')
 cat('//********************************************\n')
