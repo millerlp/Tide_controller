@@ -2,7 +2,7 @@ Tide_controller
 ===============
 
 Arduino code and associated files for building an aquarium tide height controller. This assumes that you 
-have downloaded and installed the latest version of the Arduino software (v1.0.6 or v1.6.1, or newer).
+have downloaded and installed the latest version of the Arduino software (v1.6.4, or newer).
 
 Installation:
 
