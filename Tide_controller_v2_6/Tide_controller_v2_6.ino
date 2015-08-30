@@ -183,12 +183,9 @@ void setup(void)
   digitalWrite(stepperEnable, HIGH); // turns off motor power when high  
 
   // Set up switches and input button as inputs. 
-  pinMode(lowerLimitSwitch, INPUT);
-  digitalWrite(lowerLimitSwitch, HIGH);  // turn on internal pull-up resistor
-  pinMode(upperLimitSwitch, INPUT);
-  digitalWrite(upperLimitSwitch, HIGH);  // turn on internal pull-up resistor
-  pinMode(overrideButton, INPUT);
-  digitalWrite(overrideButton, HIGH);        // turn on internal pull-up resistor
+  pinMode(lowerLimitSwitch, INPUT_PULLUP);
+  pinMode(upperLimitSwitch, INPUT_PULLUP);
+  pinMode(overrideButton, INPUT_PULLUP);
   // When using the internal pull-up resistors for the switches above, the
   // default state for the input pin is HIGH (+5V), and goes LOW (0V) when
   // the switch/button connects to ground. Thus, a LOW value indicates that the
@@ -220,7 +217,11 @@ void setup(void)
 	// Update the 7-seg LED display. This will briefly show
 	// the year, month, date, and then time in succession, followed by
 	// going back to the current tide height. 
-  sevenSegDisplayTime(now); // function to print date + time to 7-seg display
+  sevenSegDisplayScrollDateTime(now); // function to print date + time to 7-seg display
+  delay(1000);
+	mySerial.write(0x76); // reset position to start
+	mySerial.write("tidE");// spell "tidE" on 7-segment display
+	delay(1000);
   sevenSegDisplay(results); // function to print result to 7-segment display
   delay(4000);
   
@@ -253,7 +254,9 @@ void setup(void)
   Serial.print("Current tide: ");
   Serial.print(results);
   Serial.println(" ft.");
-  Serial.println(heightDiff);
+  Serial.print("Height diff: ");
+  Serial.print(heightDiff);
+  Serial.println(" ft.");
   stepVal = (long)(heightDiff / stepConv); // convert to motor steps
   if (stepVal < 0) stepVal = -stepVal; // convert negative values
   // If the heightDiff is negative (carriage needs to drop) and the
@@ -326,6 +329,16 @@ void loop(void)
     Serial.println(" ft.");
     // Calculate new tide height based on current time
     results = myTideCalc.currentTide(now);
+	  // Signal that main loop is starting
+	
+	
+	// Show the year, month, date, and then time in succession
+	sevenSegDisplayScrollDateTime(now); // function to print date + time to 7-seg display
+	delay(750);
+	mySerial.write(0x76); // reset led display position to start
+	mySerial.write("tidE");// spell "tidE" on 7-segment display
+	delay(1000);
+	// Show the new calculated tide height
     sevenSegDisplay(results); // function to print result to 7-segment display
     // Calculate height difference between currPos and
     // new tide height. Value may be positive or negative depending on
@@ -454,10 +467,7 @@ void loop(void)
       digitalWrite(lowLimitLED, HIGH); // turn LED on
     }
 	
-	// Update the 7-seg display after moving. This will briefly show
-	// the year, month, date, and then time in succession, followed by
-	// going back to the current tide height. 
-	sevenSegDisplayTime(now); // function to print date + time to 7-seg display
+
 	sevenSegDisplay(results); // function to print result to 7-segment display
 	
   }    // End of if (now.minute() != currMinute) statement
@@ -533,7 +543,7 @@ void printTime(DateTime now) {
 
 
 //********************************************************
-// sevenSegDisplayTime function
+// sevenSegDisplayScrollDateTime function
 // A function to show the year, month, day and time on 
 // the Sparkfun serial 7-segment LED display. 
 // https://www.sparkfun.com/products/11442 
@@ -541,57 +551,63 @@ void printTime(DateTime now) {
 // the sparkfun display
 // Based on https://github.com/sparkfun/Serial7SegmentDisplay/wiki/Basic-Usage
 
-void sevenSegDisplayTime(DateTime now){
+void sevenSegDisplayScrollDateTime(DateTime now){
+	int myDelay = 150;
 	mySerial.write('v'); // clear display
-	char buf[5];	// setup buffer to hold ascii year
-	itoa(now.year(), buf, 10); // convert year to ascii characters
-	mySerial.write(buf); //write ascii year
-	delay(2000);
-	mySerial.write('v'); // clear display
-	itoa(now.month(), buf, 10); // convert month to ascii characters
-	mySerial.write(0x79); // move cursor command
-	if (now.month() < 10){
-		mySerial.write(0x01); // move cursor to 2nd position
-	} else {
-		mySerial.print(0x00); // move cursor to 1st position
+	char buf[20];	// setup buffer to hold ascii date and time
+	// Convert the current date and time to a character string using
+	// the toString function in the RTClib library. The result is
+	// stored in buf
+	now.toString(buf,20);	// Result is formatted: 2015-08-30 08:08:25
+	// Now cycle through the contents of buf to display the date
+	// on the led display. The date, with dashes, should always be
+	// 10 characters long
+	for (int i = 0; i <= 14; i++){
+		// For the first iteration only show the '2' of the year on far right
+		// then bring in the other digits scrolling to the left
+		if (i < 3) {
+			mySerial.write('v');	// clear display
+			mySerial.write(0x79); // move cursor command
+			mySerial.write(3-i); // set cursor to position (3, 2, 1 or 0)
+			for (int j = 0; j <= i; j++){
+				mySerial.write(buf[j]);
+			}
+			delay(myDelay);
+		}
+		// Now all 4 digits are being used, cycle through the
+		// rest of the date
+		if (i >= 3  & i < 10) {
+			mySerial.write('v');	// clear display
+			mySerial.write(0x79); // move cursor command
+			mySerial.print(0); // set cursor to position 0
+			for (int j = 0; j < 4; j++){
+				mySerial.write(buf[((i-3)+j)]);
+			}
+			delay(myDelay);	
+		} else if (i >= 8) {
+		// As the end of the date is reached, start including
+		// blank spaces on the right side by only printing
+		// the last 3-2-1 characters
+			mySerial.write('v');
+			mySerial.write(0x79); // move cursor command
+			mySerial.print(0); // set cursor to position 0
+			for (int j = (i-3); j < 10; j++){
+				mySerial.write(buf[j]);
+			}
+			delay(myDelay);
+		}
 	}
-	mySerial.write(buf); // write month
-	delay(2000);
-	mySerial.write('v'); // clear display
-	if (now.day() < 10) {
-		mySerial.write(0x79); // send Move Cursor Command
-		mySerial.write(0x03); // position cursor at 4th digit
-		itoa(now.day(), buf, 10); // convert day to ascii
-		mySerial.write(buf);
-	} else {
-		mySerial.write(0x79); // send Move Cursor Command
-		mySerial.write(0x02); // position cursor at 3rd digit
-		itoa(now.day(), buf, 10); // convert day to ascii
-		mySerial.write(buf); // write day
-	}
-	delay(1500);
+	// Display time next
 	mySerial.write('v'); // clear display, 0x76 would also clear
 	mySerial.write(0x77); // command byte for decimals and colon
 	mySerial.write(0b0010000); // turn on colon
-	if (now.hour() < 10) {
-		mySerial.write(0x79); // send Move Cursor Command
-		mySerial.write(0x01); // position cursor at 2nd digit
-		itoa(now.hour(), buf, 10); // convert time to ascii
-		mySerial.write(buf); // print hour
-	} else {
-		itoa(now.hour(), buf, 10); // convert time to ascii
-		mySerial.write(buf); // print hour
-	}
-	// mySerial.write(now.hour()); // display hour
-	itoa(now.minute(),buf,10);
-	if (now.minute() < 10) { // for minute values less than 10
-		mySerial.print(0); // print a zero 
-		
-		mySerial.write(buf); // print minute value
-	} else {
-		mySerial.write(buf); // print minute value
-	}
-	delay(1500);
+	// Print out the hour + minutes, skipping over the colon in buf[13]
+	mySerial.write(buf[11]);
+	mySerial.write(buf[12]);
+	mySerial.write(buf[14]);
+	mySerial.write(buf[15]);
+	// The user should put a delay after this function call if they 
+	// want the hour:min to stay up for a certain amount of time. 
 }
 
 
