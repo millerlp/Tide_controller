@@ -8,4 +8,4 @@ motor controller and displays.
 See the file 'Tide_shield_notes.pdf' for more information on how this shield
 is meant to be wired and used. 
 
-![board image]('./Eagle_design_files/Tide_controller_shield_v1_top.png')
+![board image]('Eagle_design_files/Tide_controller_shield_v1_top.png')
