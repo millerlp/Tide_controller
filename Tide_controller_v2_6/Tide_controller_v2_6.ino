@@ -554,11 +554,13 @@ void printTime(DateTime now) {
 void sevenSegDisplayScrollDateTime(DateTime now){
 	int myDelay = 150;
 	mySerial.write('v'); // clear display
-	char buf[20];	// setup buffer to hold ascii date and time
+	// char buf[20];	// setup buffer to hold ascii date and time
+  char buf[] = "YYYY-MM-DD hh:mm:ss"; // newer formating for toString() function buffer
 	// Convert the current date and time to a character string using
 	// the toString function in the RTClib library. The result is
 	// stored in buf
-	now.toString(buf,20);	// Result is formatted: 2015-08-30 08:08:25
+	// now.toString(buf,20);	// Result is formatted: 2015-08-30 08:08:25
+  now.toString(buf);	// Result is formatted: 2015-08-30 08:08:25
 	// Now cycle through the contents of buf to display the date
 	// on the led display. The date, with dashes, should always be
 	// 10 characters long
