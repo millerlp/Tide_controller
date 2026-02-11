@@ -1,5 +1,5 @@
 /* Tide_controller_v2.6
-  Copyright (C) 2015 Luke Miller
+  Copyright (C) 2015 Luke Miller (last updated 2026-02-11)
  This version is set up to work on a lead-screw driven rack that has
  a limited travel range. There should be a limit switch at each end 
  of the rack's travel, and the distance between the values for 
@@ -578,7 +578,7 @@ void sevenSegDisplayScrollDateTime(DateTime now){
 		}
 		// Now all 4 digits are being used, cycle through the
 		// rest of the date
-		if (i >= 3  & i < 10) {
+		if ( (i >= 3)  & (i < 10) ) {
 			mySerial.write('v');	// clear display
 			mySerial.write(0x79); // move cursor command
 			mySerial.print(0); // set cursor to position 0
