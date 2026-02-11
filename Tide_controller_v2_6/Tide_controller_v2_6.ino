@@ -27,7 +27,7 @@
  and control a motor that changes the water level in a tank.
  
  Written under v1.0.5 of the Arduino IDE.
- Updated to work under v1.6.4, with some compile warnings. 
+ Updated to work under v1.8.19 
  
  The harmonics constants for the tide prediction are taken from 
  the XTide harmonics file. The original harmonics.tcd file is 
