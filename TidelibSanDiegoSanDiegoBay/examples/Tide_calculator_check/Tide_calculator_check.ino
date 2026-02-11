@@ -1,8 +1,11 @@
-/*  Tide_calculator.ino 
+/*  Tide_calculator_check.ino 
  Copyright (c) 2026 Luke Miller
-This code calculates the current tide height for the 
-pre-programmed site. It requires a real time clock
-(DS1307 or DS3231 chips) to generate a time for the calculation.
+This code calculates the tide height for the 
+pre-programmed site based on user input date and time. You should not
+need a functional clock chip to run this example, just use the Serial Monitor.
+
+ Just open the Serial Monitor and input a date and time using the 
+format: YYYY MM DD HH MM SS and send a newline at the end.
 The site is set by the name of the included library (see line 44 below)
 
 Written under version 1.6.4 of the Arduino IDE.
@@ -39,8 +42,14 @@ against the relevant NOAA tide predictions online.
 #include <Wire.h> // Required for RTClib
 #include <SPI.h> // Required for RTClib to compile properly
 #include <RTClib.h> // From https://github.com/millerlp/RTClib
-// Real Time Clock setup
-RTC_DS1307 rtc;  // Uncomment when using this chip
+// Declare variables to hold user input
+long myyear;
+long mymonth;
+long myday;
+long myhour;
+long myminute;
+long mysec;
+DateTime myTime;
 // Tide calculation library setup.
 // Change the library name here to predict for a different site.
 #include "TidelibSanDiegoSanDiegoBay.h"
@@ -50,33 +59,26 @@ TideCalc myTideCalc; // Create TideCalc object called myTideCalc
 int currMinute; // Keep track of current minute value in main loop
 float results; // results holds the output from the tide calc. Units = ft.
 //*******************************************************************
+//*******************************************************************
 // Welcome to the setup loop
 void setup(void)
 {
-  Wire.begin();
-  rtc.begin();
-
   // For debugging output to serial monitor
-  Serial.begin(115200); // Set baud rate to 115200 in serial monitor
+  Serial.begin(57600); // Set baud rate to 57600 in serial monitor for slow 8MHz micros
   //*************************************
-  DateTime now = rtc.now(); // Get current time from clock
-  currMinute = now.minute(); // Store current minute value
-  printTime(now);  // Call printTime function to print date/time to serial
   Serial.println("Calculating tides for: ");
   Serial.print(myTideCalc.returnStationID());
   Serial.print(" ");
   Serial.println(myTideCalc.returnStationIDnumber());
 
-  // Calculate new tide height based on current time
-  results = myTideCalc.currentTide(now);
-
-  //*****************************************
-  // For debugging
+  Serial.println("Enter date and time in the format:");
+  Serial.println("   YYYY MM DD HH MM");
+  Serial.println("For example, noon on Jan 1 2019: 2019 1 1 12 00");
+  myTime = DateTime(2019,1,1,12,0,0);
+  results = myTideCalc.currentTide(myTime);
   Serial.print("Tide height: ");
-  Serial.print(results, 3);
+  Serial.print(results,3);
   Serial.println(" ft.");
-  Serial.println(); // blank line
-
   delay(2000);
 }  // End of setup loop
 
@@ -84,39 +86,42 @@ void setup(void)
 // Welcome to the main loop
 void loop(void)
 {
-  // Get current time, store in object "now"
-   DateTime now = rtc.now();
-  // If it is the start of a new minute, calculate new tide height
-  if (now.minute() != currMinute) { 
-  // If now.minute doesn't equal currMinute, a new minute has turned
-  // over, so it's time to update the tide height. We only want to do
-  // this once per minute.
-  currMinute = now.minute(); // update currMinute
-  Serial.println();
-  printTime(now);
+// When the user has entered a date and time value in the serial
+// monitor and hit enter, the following section will execute.
+while (Serial.available() > 0) {
+  // Expect the year first
+  myyear = Serial.parseInt();
+  // Expect month next 
+  mymonth = Serial.parseInt();
+  // Expect day next
+  myday = Serial.parseInt();
+  // Expect hour next
+  myhour = Serial.parseInt();
+  // Expect minute next
+  myminute = Serial.parseInt();
 
-  // Calculate new tide height based on current time
-  results = myTideCalc.currentTide(now);
+  // When the enter symbol newline comes along, convert the 
+  // values to a DateTime object and set the clock
+  if (Serial.read() == '\n'){
+    myTime = DateTime(myyear,mymonth,myday,myhour,myminute,0);
+    printTime(myTime);
+    // Calculate new tide height based on current time
+    results = myTideCalc.currentTide(myTime);
+    Serial.print("Tide height: ");
+    Serial.print(results,3);
+    Serial.println(" ft.");
 
-  //*****************************************
-  // For debugging
-  Serial.print("Tide height: ");
-  Serial.print(results, 3);
-  Serial.println(" ft.");
-  Serial.println(); // blank line
-
-  }  // End of if (now.minute() != currMinute) statement 
-} // End of main loop 
-
-
+    }
+  }  // end of while loop
+}  // end of main loop
 //*******************************************
 // Function for printing the current date/time to the
 // serial port in a nicely formatted layout.
 void printTime(DateTime now) {
   Serial.print(now.year(), DEC);
-  Serial.print("/");
+  Serial.print("-");
   Serial.print(now.month(), DEC); 
-  Serial.print("/");
+  Serial.print("-");
   Serial.print(now.day(), DEC); 
   Serial.print("  ");
    Serial.print(now.hour(), DEC); 

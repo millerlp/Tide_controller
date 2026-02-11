@@ -1,7 +1,7 @@
 /*  TidelibSanDiegoSanDiegoBay.h 
   A library for calculating the current tide height at 
    San Diego, San Diego Bay, California , NOAA station ID number  9410170 
-  Luke Miller, 2015-06-04 
+  Luke Miller, 2026-02-11 
   Compiled under Arduino 1.6.4
   https://github.com/millerlp/Tide_calculator
  Released under the GPL version 3 license.
